@@ -1,5 +1,3 @@
-let lastTime = 0;
-
 async function start() {
   // initialize 2 skf canvases 
   let skellington = await SkfDownloadSample("skellington.skf")
@@ -21,6 +19,7 @@ async function start() {
 }
 
 // process all skf canvases per frame
+let lastTime = 0;
 function newFrame(time) {
   for (skfc of skfCanvases) {
     SkfClearScreen(skfc.canvas, [0, 0, 0, 0], skfc.gl, skfc.program);
