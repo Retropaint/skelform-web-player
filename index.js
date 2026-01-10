@@ -1,5 +1,4 @@
 async function start() {
-  // initialize 2 skf canvases 
   let skellington = await SkfDownloadSample("skellington.skf")
   await SkfInit(skellington, glcanvas)
 
