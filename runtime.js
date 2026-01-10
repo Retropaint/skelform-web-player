@@ -1,4 +1,4 @@
-function formatFrame(frame, anim, isReverse, isLoop) {
+function SkfFormatFrame(frame, anim, isReverse, isLoop) {
   lastFrame = anim.keyframes[anim.keyframes.length - 1].frame
   if (isLoop) {
     frame %= lastFrame + 1
@@ -11,11 +11,11 @@ function formatFrame(frame, anim, isReverse, isLoop) {
   return frame
 }
 
-function timeFrame(time, anim, isReverse, isLoop) {
+function SkfTimeFrame(time, anim, isReverse, isLoop) {
   let elapsed = time / 1000
   let frametime = 1 / anim.fps
   let frame = elapsed / frametime
-  return formatFrame(frame, anim, isReverse, isLoop)
+  return SkfFormatFrame(frame, anim, isReverse, isLoop)
 }
 
 function rotate(point, rot) {
@@ -179,7 +179,7 @@ function getTexFromStyle(texName, styles) {
   return finalTex
 }
 
-function animate(bones, anims, frames, smoothFrames) {
+function SkfAnimate(bones, anims, frames, smoothFrames) {
   anims.forEach((anim, a) => {
     bones.forEach(bone => {
       bone.pos.x = interpolateKeyframes(bone.id, bone.pos.x, anim.keyframes, 0, frames[a], smoothFrames[a])
@@ -288,7 +288,7 @@ function inheritance(bones, ikRots) {
   return bones
 }
 
-function construct(rawBones, ikRootIds) {
+function SkfConstruct(rawBones, ikRootIds) {
   inhBones = inheritance(structuredClone(rawBones), [])
   ikRots = inverseKinematics(structuredClone(inhBones), ikRootIds)
   finalBones = inheritance(structuredClone(rawBones), ikRots)
@@ -360,7 +360,7 @@ function inheritVert(pos, bone) {
   return pos
 }
 
-function SkfDrawBones(bones, styles, atlases, gl, program) {
+function SkfDraw(bones, styles, atlases, gl, program) {
   bones.forEach((bone, b) => {
     let tex = getTexFromStyle(bone.tex, styles)
     if (!tex) {

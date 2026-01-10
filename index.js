@@ -1,32 +1,14 @@
 let lastTime = 0;
 
-let skf_placeholder;
-let skfCanvases = []
-let skfCanvasTemplate = {
-  playing: false,
-  selAnim: 0,
-  animTime: 0,
-  canvas: {},
-  armature: {},
-  activeStyles: [],
-  stylesOpen: [],
-  gl: {},
-  program: {}
-}
-
 async function start() {
   // initialize 2 skf canvases 
   let skellington = await SkfDownloadSample("skellington.skf")
-  let skellina = await SkfDownloadSample("skellina.skf")
   await SkfInit(skellington, glcanvas)
-  await SkfInit(skellina, gl2canvas)
 
   // set progress input element of first canvas
   skfCanvases[0].progressEl = skfrange;
   // activate default style
   skfCanvases[0].activeStyles = [skfCanvases[0].armature.styles[1]];
-
-  skfCanvases[1].activeStyles = skfCanvases[1].armature.styles;
 
   skfCanvases[0].armature.animations.forEach((a, e) => {
     animations.add(new Option(a.name, e));
@@ -48,11 +30,11 @@ function newFrame(time) {
     }
 
     anim = skfc.armature.animations[skfc.selAnim];
-    const frame = timeFrame(skfc.animTime, anim, false, true);
+    const frame = SkfTimeFrame(skfc.animTime, anim, false, true);
     smooth = skfc.playing ? 20 : 0;
-    animate(skfc.armature.bones, [anim], [frame], [smooth]);
-    bones = construct(skfc.armature.bones, skfc.armature.ik_root_ids);
-    SkfDrawBones(bones, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program);
+    SkfAnimate(skfc.armature.bones, [anim], [frame], [smooth]);
+    bones = SkfConstruct(skfc.armature.bones, skfc.armature.ik_root_ids);
+    SkfDraw(bones, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program);
     if (skfc.progressEl) {
       animProgress(skfc.animTime, skfc);
     }
@@ -82,7 +64,7 @@ function animProgress(time, canvas) {
     return;
   }
   anim = canvas.armature.animations[canvas.selAnim];
-  const frame = timeFrame(time, anim, false, true);
+  const frame = SkfTimeFrame(time, anim, false, true);
   skfc.progressEl.value =
     frame / anim.keyframes[anim.keyframes.length - 1].frame;
 }

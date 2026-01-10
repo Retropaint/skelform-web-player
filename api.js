@@ -1,3 +1,17 @@
+let skfPlaceholderPixel;
+let skfCanvases = []
+let skfCanvasTemplate = {
+  playing: false,
+  selAnim: 0,
+  animTime: 0,
+  canvas: {},
+  armature: {},
+  activeStyles: [],
+  stylesOpen: [],
+  gl: {},
+  program: {}
+}
+
 async function SkfDownloadSample(filename) {
   response = await fetch(filename)
   let arrayBuffer = await response.arrayBuffer()
@@ -27,8 +41,8 @@ function SkfInitGl(gl, program) {
   gl.enable(gl.BLEND)
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-  skf_placeholder = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, skf_placeholder);
+  skfPlaceholderPixel = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, skfPlaceholderPixel);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 125, 0, 125]));
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);

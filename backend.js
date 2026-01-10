@@ -32,7 +32,7 @@ function skfDrawMesh(verts, indices, atlasTex, gl, program) {
   gl.activeTexture(gl.TEXTURE0)
 
   if (!atlasTex) {
-    gl.bindTexture(gl.TEXTURE_2D, skf_placeholder);
+    gl.bindTexture(gl.TEXTURE_2D, skfPlaceholderPixel);
   } else {
     gl.bindTexture(gl.TEXTURE_2D, atlasTex);
   }
