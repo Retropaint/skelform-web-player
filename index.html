@@ -10,9 +10,6 @@
             align-items: center;
             height: 100vh;
         }
-        canvas {
-            border: 1px solid #444;
-        }
         .skf-display {
             display: flex;
             flex-direction: column;
@@ -102,7 +99,7 @@
                 min="0.0"
                 max="1.0"
                 step="0.0001"
-                oninput="changeFrame(event)"
+                oninput="changeFrame(event, skfCanvases[0])"
             />
         </div>
 
@@ -112,14 +109,14 @@
                     <button
                         class="skf-play"
                         id="playbutton"
-                        onclick="togglePlaying()"
+                        onclick="togglePlaying(skfCanvases[0])"
                     >
                         Play
                     </button>
                 </div>
                 <select
                     class="skf-select"
-                    onchange="changeAnim()"
+                    onchange="changeAnim(this.value, skfCanvases[0])"
                     id="animations"
                     name="animations"
                 ></select>
@@ -140,7 +137,7 @@
                 </div>
                 <select
                     class="skf-select"
-                    onchange="toggleStyle(this.value)"
+                    onchange="toggleStyle(this.value, skfCanvases[0])"
                     id="styles"
                     name="styles"
                 ></select>
@@ -153,9 +150,11 @@
             >
         </div>
     </div>
+    <canvas id="gl2canvas" width="600" height="500"></canvas>
 
     <script src="jszip.js"></script>
     <script src="runtime.js"></script>
     <script src="backend.js"></script>
+    <script src="api.js"></script>
     <script src="index.js"></script>
 </html>

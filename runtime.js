@@ -100,8 +100,6 @@ function arcIk(bones, ikRootIds, root, target) {
   peak = maxLength / baseMag
   valley = baseMag / maxLength
 
-  //console.log(bones[bones[ikRootIds[0]].parent_id].name, maxLength, base, baseAngle, baseMag, peak, valley)
-
   ikRootIds.forEach((rootId, rid) => {
     if (rid == 0) { return }
     bones[rootId].pos = {
@@ -314,7 +312,6 @@ function construct(rawBones, ikRootIds) {
 }
 
 function constructVerts(bones) {
-  console.log("---")
   bones.forEach((_, b) => {
     if (!bones[b].vertices) {
       return
@@ -363,7 +360,7 @@ function inheritVert(pos, bone) {
   return pos
 }
 
-function drawBones(bones, styles, atlases) {
+function SkfDrawBones(bones, styles, atlases, gl, program) {
   bones.forEach((bone, b) => {
     let tex = getTexFromStyle(bone.tex, styles)
     if (!tex) {
@@ -412,7 +409,7 @@ function drawBones(bones, styles, atlases) {
       }
     }
 
-    drawMesh(verts, indices, atlases[tex.atlas_idx].texture)
+    skfDrawMesh(verts, indices, atlases[tex.atlas_idx].texture, gl, program)
   })
 }
 

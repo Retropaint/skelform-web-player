@@ -1,68 +1,4 @@
-function init() {
-  const canvas = document.getElementById("glcanvas");
-
-  if (!gl) {
-    alert("WebGL not supported");
-    throw new Error("WebGL not supported");
-  }
-
-  const vertexSource = `attribute vec2 a_position; attribute vec2 a_uv; uniform vec2 u_resolution; varying vec2 v_uv; void main(){ vec2 zeroToOne=a_position/u_resolution; vec2 zeroToTwo=zeroToOne*2.0; vec2 clipSpace=zeroToTwo-1.0; gl_Position=vec4(clipSpace*vec2(1.0,-1.0),0.0,1.0); v_uv=a_uv; }`;
-
-  const fragmentSource = `precision mediump float; varying vec2 v_uv; uniform sampler2D u_texture; void main(){ gl_FragColor=texture2D(u_texture,v_uv); }`;
-
-  function createShader(gl, type, source) {
-    const shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      gl.deleteShader(shader);
-      return null;
-    }
-    return shader;
-  }
-
-  function createProgram(gl, vsSource, fsSource) {
-    const vs = createShader(gl, gl.VERTEX_SHADER, vsSource);
-    const fs = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
-
-    const program = gl.createProgram();
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    gl.linkProgram(program);
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      gl.deleteProgram(program);
-      return null;
-    }
-    return program;
-  }
-
-  // transparency
-  gl.enable(gl.BLEND)
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-  skf_placeholder = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, skf_placeholder);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 125, 0, 125]));
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-  program = createProgram(gl, vertexSource, fragmentSource)
-  gl.useProgram(program)
-}
-
-function clearScreen() {
-  gl.clearColor(0.1, 0.1, 0.1, 1.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-  const resLoc = gl.getUniformLocation(program, "u_resolution");
-  gl.uniform2f(resLoc, glcanvas.width, glcanvas.height);
-  gl.viewport(0, 0, glcanvas.width, glcanvas.height);
-}
-
-function drawMesh(verts, indices, atlasTex) {
+function skfDrawMesh(verts, indices, atlasTex, gl, program) {
   // convert pos and uv into arrays
   pos = new Float32Array(verts.length * 2)
   uv = new Float32Array(verts.length * 2)
@@ -107,14 +43,9 @@ function drawMesh(verts, indices, atlasTex) {
   gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 }
 
-async function downloadSample(filename) {
-  response = await fetch(filename)
-  let arrayBuffer = await response.arrayBuffer()
-  skfData = new Uint8Array(arrayBuffer);
-}
-
-async function readFile(fileBytes) {
+async function readFile(fileBytes, gl) {
   zip = await JSZip.loadAsync(fileBytes)
+  let armature;
 
   for (const filename of Object.keys(zip.files)) {
     if (filename == "armature.json") {
@@ -138,4 +69,6 @@ async function readFile(fileBytes) {
       atlasIdx++;
     }
   }
+
+  return armature
 }

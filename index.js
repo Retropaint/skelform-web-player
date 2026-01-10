@@ -1,79 +1,102 @@
-let program;
-let gl = glcanvas.getContext("webgl");
-let skfData;
-let playing;
-let skf_placeholder;
-let armature = {};
-let selAnim = 0;
-let animTime = 0;
 let lastTime = 0;
-let activeStyles = [];
-let stylesOpen = false;
-async function start() {
-  init(gl);
-  await downloadSample("skellington.skf"),
-    await readFile(skfData),
-    armature.animations.forEach((a, e) => {
-      animations.add(new Option(a.name, e));
-    }),
-    armature.styles.forEach((a, e) => {
-      styles.add(new Option(a.name, e));
-    }),
-    requestAnimationFrame(newFrame);
+
+let skf_placeholder;
+let skfCanvases = []
+let skfCanvasTemplate = {
+  playing: false,
+  selAnim: 0,
+  animTime: 0,
+  canvas: {},
+  armature: {},
+  activeStyles: [],
+  stylesOpen: [],
+  gl: {},
+  program: {}
 }
+
+async function start() {
+  // initialize 2 skf canvases 
+  let skellington = await SkfDownloadSample("skellington.skf")
+  let skellina = await SkfDownloadSample("skellina.skf")
+  await SkfInit(skellington, glcanvas)
+  await SkfInit(skellina, gl2canvas)
+
+  // set progress input element of first canvas
+  skfCanvases[0].progressEl = skfrange;
+  // activate default style
+  skfCanvases[0].activeStyles = [skfCanvases[0].armature.styles[1]];
+
+  skfCanvases[1].activeStyles = skfCanvases[1].armature.styles;
+
+  skfCanvases[0].armature.animations.forEach((a, e) => {
+    animations.add(new Option(a.name, e));
+  });
+  skfCanvases[0].armature.styles.forEach((a, e) => {
+    styles.add(new Option(a.name, e));
+  });
+
+  requestAnimationFrame(newFrame);
+}
+
+// process all skf canvases per frame
 function newFrame(time) {
-  clearScreen();
-  if (playing) {
-    animTime += time - lastTime;
+  for (skfc of skfCanvases) {
+    SkfClearScreen(skfc.canvas, [0, 0, 0, 0], skfc.gl, skfc.program);
+
+    if (skfc.playing) {
+      skfc.animTime += time - lastTime;
+    }
+
+    anim = skfc.armature.animations[skfc.selAnim];
+    const frame = timeFrame(skfc.animTime, anim, false, true);
+    smooth = skfc.playing ? 20 : 0;
+    animate(skfc.armature.bones, [anim], [frame], [smooth]);
+    bones = construct(skfc.armature.bones, skfc.armature.ik_root_ids);
+    SkfDrawBones(bones, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program);
+    if (skfc.progressEl) {
+      animProgress(skfc.animTime, skfc);
+    }
   }
 
-  anim = armature.animations[selAnim];
-  const frame = timeFrame(animTime, anim, false, true);
-  smooth = playing ? 20 : 0;
-  animate(armature.bones, [anim], [frame], [smooth]);
   lastTime = time;
-  bones = construct(armature.bones, armature.ik_root_ids);
-  drawBones(bones, activeStyles, armature.atlases);
   requestAnimationFrame(newFrame);
-  animProgress(animTime);
 }
-function togglePlaying() {
-  playing = !playing;
-  playbutton.innerHTML = playing ? "Pause" : "Play";
+function togglePlaying(skfCanvas) {
+  skfCanvas.playing = !skfCanvas.playing;
+  playbutton.innerHTML = skfCanvas.playing ? "Pause" : "Play";
 }
 function toggleStylesDropdown() {
   stylesOpen = !stylesOpen;
   stylesdropdown.style.visibility = stylesOpen ? "visible" : "hidden"
 }
-function toggleStyle(event) {
-  let idx = activeStyles.find((s) => s.id == event);
+function toggleStyle(event, skfc) {
+  let idx = skfc.activeStyles.find((s) => s.id == event);
   if (idx) {
-    activeStyles.splice(idx, 1);
+    skfc.activeStyles.splice(idx, 1);
   } else {
-    activeStyles.splice(event, 0, armature.styles[event]);
+    skfc.activeStyles.splice(event, 0, skfc.armature.styles[event]);
   }
-  console.log(event)
 }
-function animProgress(time) {
-  if (!playing) {
+function animProgress(time, canvas) {
+  if (!canvas.playing) {
     return;
   }
-  anim = armature.animations[selAnim];
+  anim = canvas.armature.animations[canvas.selAnim];
   const frame = timeFrame(time, anim, false, true);
-  skfrange.value =
+  skfc.progressEl.value =
     frame / anim.keyframes[anim.keyframes.length - 1].frame;
 }
-function changeAnim() {
-  selAnim = animations.value;
-  animTime = 0;
+function changeAnim(event, skfCanvas) {
+  skfCanvas.selAnim = event;
+  skfCanvas.animTime = 0;
   skfrange.value = 0.0;
 }
-function changeFrame(event) {
-  playing = false;
+function changeFrame(event, skfc) {
+  skfc.playing = false;
   playbutton.innerHTML = "Play";
-  anim = armature.animations[selAnim];
+  anim = skfc.armature.animations[skfc.selAnim];
   frames = anim.keyframes[anim.keyframes.length - 1].frame;
   frametime = 1 / anim.fps;
-  animTime = frames * skfrange.value * frametime * 1000;
+  skfc.animTime = frames * skfrange.value * frametime * 1000;
 }
 start();
