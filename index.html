@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+    <meta charset="UTF-8" /><title>SkelForm Web Player</title
+    ><style>
+        body {
+            margin: 0;
+            background: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            border: 1px solid #444;
+        }
+        .skf-display {
+            display: flex;
+            flex-direction: column;
+        }
+        .skf-toolbar {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            background: #352253;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        .skf-header {
+            color: #fff;
+            display: flex;
+            align-items: center;
+            margin-right: 0.5rem;
+        }
+
+        .skf-logo {
+            width: 3rem;
+            margin-right: 0.5rem;
+        }
+
+        .skf-title {
+            font-size: 1.2rem;
+            font-family: arial;
+            margin: 0;
+            text-decoration: none;
+        }
+
+        .skf-play {
+            background: #412e69;
+            border: 2px solid rgb(89, 70, 136);
+            padding: 0.25rem;
+            color: white;
+            cursor: pointer;
+        }
+
+        .skf-select {
+            background: #412e69;
+            border: 2px solid rgb(89, 70, 136);
+            padding: 0.25rem;
+            color: white;
+            cursor: pointer;
+            margin-right: 0.5rem;
+        }
+
+        .skf-range {
+            -webkit-appearance: none;
+            appearance: none;
+            position: absolute;
+            bottom: 0.75rem;
+            left: 0;
+            width: -moz-available;
+            width: -webkit-fill-available;
+            margin-left: 1rem;
+            margin-right: 1rem;
+            height: 0.35rem;
+            background: #412e69;
+        }
+
+        .skf-range[type="range"]::-webkit-slider-thumb,
+        .skf-range::-moz-range-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgb(89, 70, 136);
+            cursor: pointer;
+        }
+
+        .skf-range[type="range"]::-webkit-slider-runnable-track,
+        .skf-range::-moz-range-progress {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 0.35rem;
+            background-color: rgb(89, 70, 136);
+        }
+    </style>
+    <div class="skf-display">
+        <div style="position: relative; height: 500px">
+            <canvas id="glcanvas" width="600" height="500"></canvas>
+            <input
+                class="skf-range"
+                id="skfrange"
+                type="range"
+                min="0.0"
+                max="1.0"
+                step="0.0001"
+                oninput="changeFrame(event)"
+            />
+        </div>
+
+        <div class="skf-toolbar">
+            <div style="display: flex">
+                <div style="width: 3.6rem">
+                    <button
+                        class="skf-play"
+                        id="playbutton"
+                        onclick="togglePlaying()"
+                    >
+                        Play
+                    </button>
+                </div>
+                <select
+                    class="skf-select"
+                    onchange="changeAnim()"
+                    id="animations"
+                    name="animations"
+                ></select>
+                <div style="position: relative">
+                    <div
+                        id="stylesdropdown"
+                        style="
+                            position: absolute;
+                            bottom: 40px;
+                            background: purple;
+                            color: white;
+                            visibility: hidden;
+                        "
+                    >
+                        test
+                    </div>
+                    <button onclick="toggleStylesDropdown()">test</button>
+                </div>
+                <select
+                    class="skf-select"
+                    onchange="toggleStyle(this.value)"
+                    id="styles"
+                    name="styles"
+                ></select>
+            </div>
+            <a href="https://skelform.org" target="_blank"
+                ><div class="skf-header">
+                    <img class="skf-logo" src="logo.png" />
+                    <p class="skf-title">SkelForm</p>
+                </div></a
+            >
+        </div>
+    </div>
+
+    <script src="jszip.js"></script>
+    <script src="runtime.js"></script>
+    <script src="backend.js"></script>
+    <script src="index.js"></script>
+</html>
