@@ -5,6 +5,10 @@ let skfCanvasTemplate = {
   selectedAnim: 0,
   animTime: 0,
   smoothFrames: 0,
+  constructOptions: {
+    position: { x: 0, y: 0 },
+    scale: { x: 1, y: 1 }
+  },
   elCanvas: {},
   elPlay: {},
   elProgress: {},
@@ -408,11 +412,7 @@ function SkfNewFrame(time) {
     const frame = SkfTimeFrame(skfc.animTime, anim, false, true);
     const smooth = (skfc.playing) ? skfc.smoothFrames : 0;
     SkfAnimate(skfc.armature.bones, [anim], [frame], [smooth]);
-    let options = {
-      scale: { x: 0.15, y: 0.15, },
-      position: { x: 300, y: -250 }
-    };
-    bones = SkfConstruct(skfc.armature.bones, skfc.armature.ik_root_ids, options);
+    bones = SkfConstruct(skfc.armature.bones, skfc.armature.ik_root_ids, skfc.constructOptions);
     SkfDraw(bones, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program);
     if (skfc.elProgress) {
       anim = skfc.armature.animations[skfc.selectedAnim];
