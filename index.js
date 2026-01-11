@@ -22,16 +22,16 @@ let lastTime = 0;
 function newFrame(time) {
   for (skfc of skfCanvases) {
     SkfClearScreen(skfc.canvas, [0, 0, 0, 0], skfc.gl, skfc.program);
-
-    if (skfc.playing) {
-      skfc.animTime += time - lastTime;
-    }
-
+    skfc.animTime += (skfc.playing) ? time - lastTime : 0;
     anim = skfc.armature.animations[skfc.selAnim];
     const frame = SkfTimeFrame(skfc.animTime, anim, false, true);
     smooth = skfc.playing ? 20 : 0;
     SkfAnimate(skfc.armature.bones, [anim], [frame], [smooth]);
-    bones = SkfConstruct(skfc.armature.bones, skfc.armature.ik_root_ids);
+    let options = {
+      scale: { x: 0.15, y: 0.15, },
+      position: { x: 300, y: -250 }
+    }
+    bones = SkfConstruct(skfc.armature.bones, skfc.armature.ik_root_ids, options);
     SkfDraw(bones, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program);
     if (skfc.progressEl) {
       animProgress(skfc.animTime, skfc);

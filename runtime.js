@@ -288,22 +288,21 @@ function inheritance(bones, ikRots) {
   return bones
 }
 
-function SkfConstruct(rawBones, ikRootIds) {
+function SkfConstruct(rawBones, ikRootIds, options) {
   inhBones = inheritance(structuredClone(rawBones), [])
   ikRots = inverseKinematics(structuredClone(inhBones), ikRootIds)
   finalBones = inheritance(structuredClone(rawBones), ikRots)
   constructVerts(finalBones)
-  let scale = { x: 0.15, y: 0.15 }
   finalBones.forEach((bone, b) => {
-    finalBones[b].scale = mulv2(finalBones[b].scale, scale)
-    finalBones[b].pos = mulv2(finalBones[b].pos, scale)
-    finalBones[b].pos = addv2(finalBones[b].pos, { x: 300, y: -275 })
+    finalBones[b].scale = mulv2(finalBones[b].scale, options.scale)
+    finalBones[b].pos = mulv2(finalBones[b].pos, options.scale)
+    finalBones[b].pos = addv2(finalBones[b].pos, options.position)
 
     if (finalBones[b].vertices) {
       for (vert of finalBones[b].vertices) {
         vert.pos.y = -vert.pos.y;
-        vert.pos = mulv2(vert.pos, scale);
-        vert.pos = addv2(vert.pos, { x: 300, y: 275 });
+        vert.pos = mulv2(vert.pos, options.scale);
+        vert.pos = addv2(vert.pos, { x: options.position.x, y: -options.position.y });
       }
     }
   })
