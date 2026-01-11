@@ -1,7 +1,6 @@
 <!doctype html>
-<html lang="en">
-    <meta charset="UTF-8" /><title>SkelForm Web Player</title>
-    <link rel="stylesheet" href="index.css" />
+<html lang="en" style="background: darkgrey">
+    <meta charset="UTF-8" /><title>SkelForm Web Player Example</title>
 
     <script src="jszip.js"></script>
     <script src="runtime.js"></script>
@@ -9,19 +8,23 @@
 
     <script>
         async function start() {
+            // Download and initialize .skf file and its armature.
+            // Note: both functions below are async
             let skellington = await SkfDownloadSample("skellington.skf");
             await SkfInit(skellington, glcanvas);
-            await SkfInit(skellington, gl2canvas);
 
-            SkfShowPlayer("player", skfCanvases[0]);
-            //SkfShowPlayer("player2", skfCanvases[1]);
-
-            // activate default style
+            // Initialized armatures go into an 'skfCanvases' array.
+            // All configurable settings are shown below, assuming the first canvas.
+            // Everything else in each skfCanvas is automatically configured and should not be tampered with.
             skfCanvases[0].activeStyles = [skfCanvases[0].armature.styles[1]];
-            skfCanvases[0].selAnim = 1;
+            skfCanvases[0].selectedAnim = 1;
             skfCanvases[0].smoothFrames = 0;
             skfCanvases[0].playing = true;
 
+            // Show web player. This is optional, and is only for showcases.
+            SkfShowPlayer("player", skfCanvases[0]);
+
+            // Start animating!
             requestAnimationFrame(SkfNewFrame);
         }
         start();
@@ -29,9 +32,5 @@
 
     <div id="player" style="width: 600px; height: 600px">
         <canvas id="glcanvas" width="600" height="500"></canvas>
-    </div>
-
-    <div id="player2" style="width: 600px; height: 600px">
-        <canvas id="gl2canvas" width="600" height="500"></canvas>
     </div>
 </html>

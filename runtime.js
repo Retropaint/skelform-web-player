@@ -153,7 +153,7 @@ function inverseKinematics(bones, ikRootIds) {
       }
     }
 
-    // save rots to hash
+    /* save rots to hash */
     bone_ids.forEach((bid, b) => {
       if (b == bone_ids.length - 1) {
         return
@@ -276,7 +276,7 @@ function inheritance(bones, ikRots) {
     bones[b].rot += parent.rot
     bones[b].scale = mulv2(bones[b].scale, parent.scale)
     bones[b].pos = mulv2(bones[b].pos, parent.scale)
-    // rotate child around parent as if it were orbitting
+    /* rotate child around parent as if it were orbitting */
     bones[b].pos = rotate(bones[b].pos, parent.rot)
     bones[b].pos = addv2(bones[b].pos, parent.pos)
 
