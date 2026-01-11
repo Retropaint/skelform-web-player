@@ -14,13 +14,13 @@ let skfCanvasTemplate = {
 
 async function SkfDownloadSample(filename) {
   response = await fetch(filename)
-  let arrayBuffer = await response.arrayBuffer()
+  const arrayBuffer = await response.arrayBuffer()
   return new Uint8Array(arrayBuffer);
 }
 
 async function SkfInit(skfData, canvas) {
   skfCanvases.push(structuredClone(skfCanvasTemplate))
-  let last = skfCanvases.length - 1;
+  const last = skfCanvases.length - 1;
   skfCanvases[last].gl = canvas.getContext("webgl");
   skfCanvases[last].program = {};
   skfCanvases[last].armature = await skfReadFile(skfData, skfCanvases[last].gl);
@@ -134,13 +134,13 @@ async function skfReadFile(fileBytes, gl) {
 
   for (const filename of Object.keys(zip.files)) {
     if (filename == "armature.json") {
-      fileData = await zip.files[filename].async('string')
+      const fileData = await zip.files[filename].async('string')
       armature = JSON.parse(fileData)
     }
 
     let atlasIdx = 0
     if (filename.includes("atlas")) {
-      fileData = await zip.files[filename].async('uint8array')
+      const fileData = await zip.files[filename].async('uint8array')
       const blob = new Blob([fileData], { type: "image/png" });
       const bitmap = await createImageBitmap(blob);
 
@@ -165,20 +165,20 @@ function SkfDraw(bones, styles, atlases, gl, program) {
       return
     }
 
-    let size = atlases[tex.atlas_idx].size
+    const size = atlases[tex.atlas_idx].size
 
-    let tleft = tex.offset.x / size.x
-    let tright = (tex.offset.x + tex.size.x) / size.x
-    let ttop = tex.offset.y / size.y
-    let tbot = (tex.offset.y + tex.size.y) / size.y
-    let tsize = tex.size
+    const tleft = tex.offset.x / size.x
+    const tright = (tex.offset.x + tex.size.x) / size.x
+    const ttop = tex.offset.y / size.y
+    const tbot = (tex.offset.y + tex.size.y) / size.y
+    const tsize = tex.size
 
     let verts;
     let indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
     if (bone.vertices) {
       verts = structuredClone(bone.vertices)
       for (vert of verts) {
-        let uvsize = { x: tright - tleft, y: tbot - ttop }
+        const uvsize = { x: tright - tleft, y: tbot - ttop }
         vert.uv = { x: tleft + (uvsize.x * vert.uv.x), y: ttop + (uvsize.y * vert.uv.y) }
       }
       indices = new Uint16Array(bone.indices);
@@ -200,7 +200,7 @@ function SkfDraw(bones, styles, atlases, gl, program) {
         pos: { x: (-tsize.x / 2 * bone.scale.x), y: (+tsize.y / 2 * bone.scale.y) },
       }];
 
-      let invPos = { x: bone.pos.x, y: -bone.pos.y }
+      const invPos = { x: bone.pos.x, y: -bone.pos.y }
       for (let i = 0; i < 4; i++) {
         verts[i].pos = rotate(verts[i].pos, -bone.rot);
         verts[i].pos = addv2(verts[i].pos, invPos);
@@ -213,8 +213,8 @@ function SkfDraw(bones, styles, atlases, gl, program) {
 
 function skfDrawPoints(poses) {
   poses.forEach(pos => {
-    let size = 12
-    let verts = [{
+    const size = 12
+    const verts = [{
       pos: { x: pos.x - size, y: pos.y - size }, uv: { x: 0, y: 0 }
     },
     {
@@ -228,4 +228,8 @@ function skfDrawPoints(poses) {
     }];
     drawMesh(verts, new Uint16Array([0, 1, 2, 0, 2, 3]), false)
   })
+}
+
+function showPlayer(id) {
+  const container = document.getElementById(id);
 }
