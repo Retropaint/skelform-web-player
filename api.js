@@ -253,6 +253,7 @@ function SkfShowPlayer(id, skfCanvas) {
       padding-left: 1rem;
       padding-right: 1rem;
       height: 3rem;
+      margin-top: -6px;
     }
     .skf-toolbar-container {
       display: flex;
@@ -336,9 +337,7 @@ function SkfShowPlayer(id, skfCanvas) {
   }
 
   let main = document.getElementById(id);
-
-  let container = newEl("div", main, "skf-canvas-container");
-  container.appendChild(skfCanvas.elCanvas);
+  main.appendChild(skfCanvas.elCanvas);
 
   let toolbar = newEl("div", main, "skf-toolbar");
   let toolbarContainer = newEl("div", toolbar, "");
