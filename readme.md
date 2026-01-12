@@ -13,6 +13,11 @@ Includes all SkelForm runtime features, as well as an optional player with:
 ## Example
 
 ```html
+
+<script src="jszip.js"></script>
+<script src="runtime.js"></script>
+<script src="api.js"></script>
+
 <script>
   async function start() {
     // Download and initialize .skf file and its armature.
@@ -54,7 +59,7 @@ This repo may be cloned to run the included `index.html` file.
 
 This library's files are hosted on [skelform.org](https://skelform.org):
 
-```
+```html
 <script src="https://skelform.org/jszip.js"></script>
 <script src="https://skelform.org/runtime.js"></script>
 <script src="https://skelform.org/api.js"></script>
