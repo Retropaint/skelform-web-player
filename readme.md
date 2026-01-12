@@ -13,7 +13,6 @@ Includes all SkelForm runtime features, as well as an optional player with:
 ## Example
 
 ```html
-
 <script src="jszip.js"></script>
 <script src="runtime.js"></script>
 <script src="api.js"></script>
@@ -36,7 +35,11 @@ Includes all SkelForm runtime features, as well as an optional player with:
     skfCanvases[0].constructOptions.position = { x: 300, y: -250 };
 
     // Show web player. This is optional, and is only for showcases.
-    SkfShowPlayer("player", skfCanvases[0]);
+    // Parameters:
+    // - Canvas container ID
+    // - skfCanvas (use skfCanvases array)
+    // - Show SkelForm branding? (default false)
+    SkfShowPlayer("player", skfCanvases[0], false);
 
     // Start animating!
     requestAnimationFrame(SkfNewFrame);
