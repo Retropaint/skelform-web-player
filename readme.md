@@ -46,7 +46,7 @@ Includes all SkelForm runtime features, as well as an optional player with:
 
 The above example will load the skellington sample included in the repo:
 
-![html.png]
+![Web Player Example](./html.png)
 
 This repo may be cloned to run the included `index.html` file.
 
