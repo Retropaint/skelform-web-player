@@ -286,6 +286,7 @@ function SkfShowPlayer(id, skfCanvas) {
       padding: 0.25rem;
       color: white;
       cursor: pointer;
+      height: 2rem;
     }
     
     .skf-select {
@@ -295,12 +296,12 @@ function SkfShowPlayer(id, skfCanvas) {
       color: white;
       cursor: pointer;
       margin-right: 0.5rem;
+      height: 2rem;
     }
     
     .skf-range {
       -webkit-appearance: none;
       appearance: none;
-      position: absolute;
       bottom: 0.75rem;
       left: 0;
       width: -moz-available;
@@ -339,8 +340,11 @@ function SkfShowPlayer(id, skfCanvas) {
   let container = newEl("div", main, "skf-canvas-container");
   container.appendChild(skfCanvas.elCanvas);
 
+  let toolbar = newEl("div", main, "skf-toolbar");
+  let toolbarContainer = newEl("div", toolbar, "");
+
   /* animation progress bar */
-  let slider = newEl("input", container, "skf-range");
+  let slider = newEl("input", toolbar, "skf-range");
   slider.type = "range";
   slider.min = 0;
   slider.max = 1;
@@ -355,11 +359,10 @@ function SkfShowPlayer(id, skfCanvas) {
     skfCanvas.animTime = frames * slider.value * frametime * 1000;
   });
 
-  let toolbar = newEl("div", main, "skf-toolbar");
-  let toolbarContainer = newEl("div", toolbar, "skf-toolbar-container");
+  let toolbarFlex = newEl("div", toolbarContainer, "skf-toolbar-container");
 
   /* play button */
-  let playContainer = newEl("div", toolbarContainer, "skf-play-container");
+  let playContainer = newEl("div", toolbarFlex, "skf-play-container");
   playContainer.className = "skf-play-container";
   let playButton = newEl("button", playContainer, "skf-play");
   skfCanvas.elPlay = playButton;
@@ -368,7 +371,7 @@ function SkfShowPlayer(id, skfCanvas) {
     skfCanvas.playing = !skfCanvas.playing;
   });
 
-  let animSelect = newEl("select", toolbarContainer, "skf-select");
+  let animSelect = newEl("select", toolbarFlex, "skf-select");
   skfCanvas.armature.animations.forEach((anim, a) => {
     animSelect.add(new Option(anim.name, a));
   });
@@ -378,7 +381,7 @@ function SkfShowPlayer(id, skfCanvas) {
     skfCanvas.elProgress.value = 0.0;
   });
 
-  let styleSelect = newEl("select", toolbarContainer, "skf-select");
+  let styleSelect = newEl("select", toolbarFlex, "skf-select");
   skfCanvas.armature.styles.forEach((style, a) => {
     styleSelect.add(new Option(style.name, a));
   });
