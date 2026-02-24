@@ -163,7 +163,7 @@ async function skfReadFile(fileBytes, gl) {
 
 function SkfDraw(bones, styles, atlases, gl, program) {
   bones.forEach((bone, b) => {
-    let tex = getTexFromStyle(bone.tex, styles);
+    let tex = SkfGenericGetBoneTexture(bone.tex, styles);
     if (!tex) {
       return
     }
@@ -412,10 +412,10 @@ function SkfNewFrame(time) {
     skfc.animTime += (skfc.playing) ? time - skfLastTime : 0;
     skfc.elPlay.innerText = (skfc.playing) ? "Pause" : "Play ";
     anim = skfc.armature.animations[skfc.selectedAnim];
-    const frame = SkfTimeFrameGeneric(skfc.animTime, anim, false, true);
+    const frame = SkfGenericTimeFrame(skfc.animTime, anim, false, true);
     const smooth = (skfc.playing) ? skfc.smoothFrames : 0;
-    SkfAnimateGeneric(skfc.armature.bones, [anim], [frame], [smooth]);
-    bones = SkfConstructGeneric(skfc.armature.bones, skfc.armature.ik_root_ids, skfc.constructOptions);
+    SkfGenericAnimate(skfc.armature.bones, [anim], [frame], [smooth]);
+    bones = SkfGenericConstruct(skfc.armature.bones, skfc.armature.ik_root_ids, skfc.constructOptions);
     let options = skfc.constructOptions;
     bones.forEach((bone, b) => {
       bones[b].scale = mulv2(bones[b].scale, options.scale)
@@ -433,7 +433,7 @@ function SkfNewFrame(time) {
     SkfDraw(bones, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program);
     if (skfc.elProgress) {
       anim = skfc.armature.animations[skfc.selectedAnim];
-      const frame = SkfTimeFrameGeneric(skfc.animTime, anim, false, true);
+      const frame = SkfGenericTimeFrame(skfc.animTime, anim, false, true);
       skfc.elProgress.value = frame / anim.keyframes[anim.keyframes.length - 1].frame;
     }
   }
