@@ -119,7 +119,7 @@ function inverseKinematics(bones, ikRootIds) {
 
     const root = structuredClone(family.pos);
     const target = structuredClone(bones[family.ik_target_id].pos);
-    if (family.ik_mode == 0) {
+    if (family.ik_mode == "FABRIK") {
       for (i = 0; i < 10; i++) {
         fabrik(bones, structuredClone(bone_ids), root, target)
       }
@@ -145,8 +145,8 @@ function inverseKinematics(bones, ikRootIds) {
     const baseDir = normalize(subv2(target, root))
     const dir = jointDir.x * baseDir.y - baseDir.x * jointDir.y;
     const baseAngle = Math.atan2(baseDir.y, baseDir.x)
-    const cw = family.ik_constraint == 1 && dir > 0.;
-    const ccw = family.ik_constraint == 2 && dir < 0.;
+    const cw = family.ik_constraint == "Clockwise" && dir > 0.;
+    const ccw = family.ik_constraint == "CounterClockwise" && dir < 0.;
     if (cw || ccw) {
       for (id of family.ik_bone_ids) {
         bones[id].rot = -bones[id].rot + baseAngle * 2;
@@ -182,28 +182,28 @@ function getTexFromStyle(texName, styles) {
 function SkfAnimate(bones, anims, frames, smoothFrames) {
   anims.forEach((anim, a) => {
     bones.forEach(bone => {
-      bone.pos.x = interpolateKeyframes(bone.id, bone.pos.x, anim.keyframes, 0, frames[a], smoothFrames[a])
-      bone.pos.y = interpolateKeyframes(bone.id, bone.pos.y, anim.keyframes, 1, frames[a], smoothFrames[a])
-      bone.rot = interpolateKeyframes(bone.id, bone.rot, anim.keyframes, 2, frames[a], smoothFrames[a])
-      bone.scale.x = interpolateKeyframes(bone.id, bone.scale.x, anim.keyframes, 3, frames[a], smoothFrames[a])
-      bone.scale.y = interpolateKeyframes(bone.id, bone.scale.y, anim.keyframes, 4, frames[a], smoothFrames[a])
+      bone.pos.x = interpolateKeyframes(bone.id, bone.pos.x, anim.keyframes, "PositionX", frames[a], smoothFrames[a])
+      bone.pos.y = interpolateKeyframes(bone.id, bone.pos.y, anim.keyframes, "PositionY", frames[a], smoothFrames[a])
+      bone.rot = interpolateKeyframes(bone.id, bone.rot, anim.keyframes, "Rotation", frames[a], smoothFrames[a])
+      bone.scale.x = interpolateKeyframes(bone.id, bone.scale.x, anim.keyframes, "ScaleX", frames[a], smoothFrames[a])
+      bone.scale.y = interpolateKeyframes(bone.id, bone.scale.y, anim.keyframes, "ScaleY", frames[a], smoothFrames[a])
     })
   })
 
   bones.forEach(bone => {
-    if (!isAnimated(bone.id, anims, 0)) {
+    if (!isAnimated(bone.id, anims, "PositionX")) {
       bone.pos.x = interpolate(frames[0], smoothFrames[0], bone.pos.x, bone.init_pos.x);
     }
-    if (!isAnimated(bone.id, anims, 1)) {
+    if (!isAnimated(bone.id, anims, "PositionY")) {
       bone.pos.y = interpolate(frames[0], smoothFrames[0], bone.pos.y, bone.init_pos.y);
     }
-    if (!isAnimated(bone.id, anims, 2)) {
+    if (!isAnimated(bone.id, anims, "Rotation")) {
       bone.rot = interpolate(frames[0], smoothFrames[0], bone.rot, bone.init_rot);
     }
-    if (!isAnimated(bone.id, anims, 3)) {
+    if (!isAnimated(bone.id, anims, "ScaleX")) {
       bone.scale.x = interpolate(frames[0], smoothFrames[0], bone.scale.x, bone.init_scale.x);
     }
-    if (!isAnimated(bone.id, anims, 4)) {
+    if (!isAnimated(bone.id, anims, "ScaleY")) {
       bone.scale.y = interpolate(frames[0], smoothFrames[0], bone.scale.y, bone.init_scale.y);
     }
   })
