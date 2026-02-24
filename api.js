@@ -412,14 +412,28 @@ function SkfNewFrame(time) {
     skfc.animTime += (skfc.playing) ? time - skfLastTime : 0;
     skfc.elPlay.innerText = (skfc.playing) ? "Pause" : "Play ";
     anim = skfc.armature.animations[skfc.selectedAnim];
-    const frame = SkfTimeFrame(skfc.animTime, anim, false, true);
+    const frame = SkfTimeFrameGeneric(skfc.animTime, anim, false, true);
     const smooth = (skfc.playing) ? skfc.smoothFrames : 0;
-    SkfAnimate(skfc.armature.bones, [anim], [frame], [smooth]);
-    bones = SkfConstruct(skfc.armature.bones, skfc.armature.ik_root_ids, skfc.constructOptions);
+    SkfAnimateGeneric(skfc.armature.bones, [anim], [frame], [smooth]);
+    bones = SkfConstructGeneric(skfc.armature.bones, skfc.armature.ik_root_ids, skfc.constructOptions);
+    let options = skfc.constructOptions;
+    bones.forEach((bone, b) => {
+      bones[b].scale = mulv2(bones[b].scale, options.scale)
+      bones[b].pos = mulv2(bones[b].pos, options.scale)
+      bones[b].pos = addv2(bones[b].pos, options.position)
+
+      if (bones[b].vertices) {
+        for (vert of bones[b].vertices) {
+          vert.pos.y = -vert.pos.y;
+          vert.pos = mulv2(vert.pos, options.scale);
+          vert.pos = addv2(vert.pos, { x: options.position.x, y: -options.position.y });
+        }
+      }
+    })
     SkfDraw(bones, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program);
     if (skfc.elProgress) {
       anim = skfc.armature.animations[skfc.selectedAnim];
-      const frame = SkfTimeFrame(skfc.animTime, anim, false, true);
+      const frame = SkfTimeFrameGeneric(skfc.animTime, anim, false, true);
       skfc.elProgress.value = frame / anim.keyframes[anim.keyframes.length - 1].frame;
     }
   }
