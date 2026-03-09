@@ -16,7 +16,8 @@ let skfCanvasTemplate = {
   activeStyles: [],
   stylesOpen: [],
   gl: {},
-  program: {}
+  program: {},
+  styleDrop: false
 };
 
 async function SkfDownloadSample(filename) {
@@ -328,6 +329,32 @@ function SkfShowPlayer(id, skfCanvas, showSkfBranding) {
       height: 0.35rem;
       background-color: rgb(89, 70, 136);
     }
+
+    .skf-menu {
+      position: absolute;
+      background: #412e69;
+      border: 2px solid rgb(89, 70, 136);
+      padding: 0.25rem;
+      color: white;
+      cursor: pointer;
+      visibility: hidden;
+      font-family: arial;
+
+      p {
+        margin: 0;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;   
+        -ms-user-select: none;    
+        -khtml-user-select: none; 
+        padding: 0.25rem;
+        margin: 0.2rem 0rem;
+
+        &.selected {
+          background: rgb(101 80 157);
+        }
+      }
+    }
   `;
 
   function newEl(str, parent, className) {
@@ -370,6 +397,7 @@ function SkfShowPlayer(id, skfCanvas, showSkfBranding) {
     skfCanvas.playing = !skfCanvas.playing;
   });
 
+  // animation select
   let animSelect = newEl("select", toolbarFlex, "skf-select");
   skfCanvas.armature.animations.forEach((anim, a) => {
     animSelect.add(new Option(anim.name, a));
@@ -380,19 +408,37 @@ function SkfShowPlayer(id, skfCanvas, showSkfBranding) {
     skfCanvas.elProgress.value = 0.0;
   });
 
-  let styleSelect = newEl("select", toolbarFlex, "skf-select");
-  skfCanvas.armature.styles.forEach((style, a) => {
-    styleSelect.add(new Option(style.name, a));
+  // style select
+  let styleMenuContainer = newEl("div", toolbarFlex, "");
+  let styleMenu = newEl("div", styleMenuContainer, "skf-menu");
+  let styleButton = newEl("button", styleMenuContainer, "skf-play");
+  styleButton.innerText = "Styles";
+  styleButton.addEventListener("click", () => {
+    styleMenu.style.visibility = (styleMenu.style.visibility == "visible") ? "hidden" : "visible";
   });
-  styleSelect.addEventListener("click", () => {
-    let idx = skfCanvas.activeStyles.findIndex((s) => s.id == styleSelect.value);
-    if (idx == -1) {
-      skfCanvas.activeStyles.splice(styleSelect.value, 0, skfCanvas.armature.styles[styleSelect.value]);
-    } else {
-      skfCanvas.activeStyles.splice(idx, 1);
+  // style buttons
+  skfCanvas.armature.styles.forEach((style, s) => {
+    let styleEl = newEl("p", styleMenu, "");
+    styleEl.innerText = style.name;
+    let isActive = skfCanvas.activeStyles.find((style2) => style2.id == style.id);
+    if (isActive) {
+      styleEl.classList.add("selected");
     }
+    styleEl.addEventListener("click", () => {
+      let isActive = skfCanvas.activeStyles.find((style2) => style2.id == style.id);
+      if (!isActive) {
+        skfCanvas.activeStyles.splice(skfCanvas.armature.styles[s].id, 0, skfCanvas.armature.styles[s]);
+        styleEl.classList.add("selected");
+      } else {
+        skfCanvas.activeStyles = skfCanvas.activeStyles.filter((style2) => style2.id != style.id);
+        styleEl.classList.remove("selected");
+      }
+    })
   });
+  // push style menu above button
+  styleMenu.style.transform = "translateY(-" + (styleMenu.offsetHeight - 2) + "px)";
 
+  // title & logo
   let title = newEl("a", toolbar, "");
   title.href = "https://skelform.org";
   title.target = "_blank";
