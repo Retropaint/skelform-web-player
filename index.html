@@ -3,7 +3,7 @@
     <meta charset="UTF-8" /><title>SkelForm Web Player Example</title>
 
     <script src="jszip.js"></script>
-    <script src="runtime.js"></script>
+    <script src="skelform-js.js"></script>
     <script src="api.js"></script>
 
     <script>
@@ -16,10 +16,9 @@
             // Initialized armatures go into an 'skfCanvases' array.
             // All configurable settings are shown below, assuming the first canvas.
             // Everything else in each skfCanvas is automatically configured and should not be tampered with.
-            skfCanvases[0].activeStyles = [skfCanvases[0].armature.styles[1]];
+            skfCanvases[0].activeStyles = [skfCanvases[0].armature.styles[0]];
             skfCanvases[0].selectedAnim = 1;
             skfCanvases[0].smoothFrames = 0;
-            skfCanvases[0].playing = true;
             skfCanvases[0].constructOptions.scale = { x: 0.125, y: 0.125 };
             skfCanvases[0].constructOptions.position = { x: 300, y: -250 };
 
@@ -28,6 +27,7 @@
             // - Canvas container ID
             // - skfCanvas (use skfCanvases array)
             // - Show SkelForm branding? (default false)
+            console.log(skfCanvases[0].armature)
             SkfShowPlayer("player", skfCanvases[0], false);
 
             // Start animating!

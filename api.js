@@ -433,10 +433,12 @@ function SkfShowPlayer(id, skfCanvas, showSkfBranding) {
         skfCanvas.activeStyles = skfCanvas.activeStyles.filter((style2) => style2.id != style.id);
         styleEl.classList.remove("selected");
       }
+      skfCanvas.activeStyles.sort(function(a, b) { return (a.id < b.id) ? -1 : 1 });
     })
   });
-  // push style menu above button
-  styleMenu.style.transform = "translateY(-" + (styleMenu.offsetHeight - 2) + "px)";
+  // push style menu below button
+  //styleMenu.style.transform = "translateY(-" + (styleMenu.offsetHeight - 2) + "px)";
+  styleMenu.style.transform = "translateY(30px)";
 
   // title & logo
   let title = newEl("a", toolbar, "");
