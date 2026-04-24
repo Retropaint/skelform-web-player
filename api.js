@@ -184,9 +184,11 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers) {
     // if this bone uses a different texture atlas, render everything before it and prepare
     // to render anything that uses this atlas
     if (tex.atlas_idx != lastAtlasIdx) {
-      skfDrawMesh(verts, indices, atlases[tex.atlas_idx].texture, gl, program, buffers);
-      verts = [];
-      indices = [];
+      if (verts.length > 0 && indices.length > 0) {
+        skfDrawMesh(verts, indices, atlases[tex.atlas_idx].texture, gl, program, buffers);
+        verts = [];
+        indices = [];
+      }
       lastAtlasIdx = tex.atlas_idx;
     }
 
