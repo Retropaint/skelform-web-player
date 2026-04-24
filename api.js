@@ -89,6 +89,19 @@ function SkfInitGl(gl, program) {
   buffers.push(gl.createBuffer());
   buffers.push(gl.createBuffer());
 
+  let attrib_pos = gl.getAttribLocation(program, "a_position");
+  let attrib_uv = gl.getAttribLocation(program, "a_uv");
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers[0]);
+  gl.enableVertexAttribArray(attrib_pos);
+  gl.vertexAttribPointer(attrib_pos, 2, gl.FLOAT, false, 0, 0);
+  gl.bufferData(gl.ARRAY_BUFFER, 5000, gl.DYNAMIC_DRAW);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers[1]);
+  gl.enableVertexAttribArray(attrib_uv);
+  gl.vertexAttribPointer(attrib_uv, 2, gl.FLOAT, false, 0, 0);
+  gl.bufferData(gl.ARRAY_BUFFER, 5000, gl.DYNAMIC_DRAW);
+
   return [gl, program, buffers];
 }
 
@@ -113,11 +126,7 @@ function skfDrawMesh(verts, indices, atlasTex, gl, program, buffers) {
 
   function bindAttribute(name, data, size, buffer) {
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
-
-    const loc = gl.getAttribLocation(program, name);
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
   }
   bindAttribute("a_position", pos, 2, buffers[0]);
   bindAttribute("a_uv", uv, 2, buffers[1]);
