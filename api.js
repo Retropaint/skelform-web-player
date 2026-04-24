@@ -177,9 +177,6 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers) {
   let lastAtlasIdx = 0;
   let hiddens = [];
   bones.forEach((bone, b) => {
-    if (bone.name == "Root") {
-      console.log(bone.hidden);
-    }
     let hidden = bone.hidden || false;
     if (bone.parent_id != -1 && hiddens[bone.parent_id]) {
       hidden = true;
