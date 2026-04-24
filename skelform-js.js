@@ -31,6 +31,12 @@ function SkfGenericTimeFrame(time, anim, isReverse, isLoop) {
   return SkfGenericFormatFrame(frame, anim, isReverse, isLoop)
 }
 
+function copyArray(src, dst) {
+  for (let i = 0; i < dst.length; i++) {
+    src[i] = dst[i]
+  }
+}
+
 function rotate(point, rot) {
   return { x: point.x * Math.cos(rot) - point.y * Math.sin(rot), y: point.x * Math.sin(rot) + point.y * Math.cos(rot), }
 }
@@ -74,14 +80,18 @@ function normalize(vec) {
 function fabrik(bones, bone_ids, root, target) {
   let nextPos = target
   let nextLength = 0
-  let rev_bone_ids = structuredClone(bone_ids)
+  let rev_bone_ids = [];
+  for (let i = 0; i < bone_ids.length; i++) {
+    rev_bone_ids.push(bone_ids[i]);
+  }
   rev_bone_ids.reverse().forEach((id, b) => {
     const length = mulv2f(normalize(subv2(nextPos, bones[id].pos)), nextLength)
     if (b != rev_bone_ids.length - 1) {
       nextLength = magnitude(subv2(bones[id].pos, bones[rev_bone_ids[b + 1]].pos))
     }
     bones[id].pos = subv2(nextPos, length)
-    nextPos = structuredClone(bones[id].pos)
+    nextPos.x = bones[id].pos.x
+    nextPos.y = bones[id].pos.y
   })
 
   let prevPos = root
@@ -92,7 +102,8 @@ function fabrik(bones, bone_ids, root, target) {
       prevLength = magnitude(subv2(bones[id].pos, bones[bone_ids[b + 1]].pos))
     }
     bones[id].pos = subv2(prevPos, length)
-    prevPos = structuredClone(bones[id].pos)
+    prevPos.x = bones[id].pos.x
+    prevPos.y = bones[id].pos.y
   })
 }
 
@@ -128,31 +139,31 @@ function inverseKinematics(bones, ikRootIds) {
   let ikRots = []
   ikRootIds.forEach(rootId => {
     family = bones[rootId]
-    const bone_ids = structuredClone(family.ik_bone_ids);
 
-    const root = structuredClone(family.pos);
-    const target = structuredClone(bones[family.ik_target_id].pos);
+    const root = { x: family.pos.x, y: family.pos.y };
+    const target = { x: bones[family.ik_target_id].pos.x, y: bones[family.ik_target_id].pos.y };
     if (family.ik_mode == "FABRIK") {
       for (i = 0; i < 10; i++) {
-        fabrik(bones, bone_ids, root, target)
+        fabrik(bones, family.ik_bone_ids, root, target)
       }
     } else {
-      arcIk(bones, bone_ids, root, target)
+      arcIk(bones, family.ik_bone_ids, root, target)
     }
 
-    const endBone = bones[bone_ids[bone_ids.length - 1]]
-    let tipPos = structuredClone(endBone.pos);
-    let rev_bone_ids = structuredClone(bone_ids)
+    const endBone = bones[family.ik_bone_ids[family.ik_bone_ids.length - 1]]
+    let tipPos = { x: endBone.pos.x, y: endBone.pos.y };
+    let rev_bone_ids = [];
+    copyArray(rev_bone_ids, family.ik_bone_ids);
     rev_bone_ids.reverse().forEach((bid, b) => {
       if (b == 0) {
         return
       }
       const dir = subv2(tipPos, bones[bid].pos)
       bones[bid].rot = Math.atan2(dir.y, dir.x)
-      tipPos = structuredClone(bones[bid].pos)
+      tipPos = { x: bones[bid].pos.x, y: bones[bid].pos.y };
     })
 
-    const jointDir = normalize(subv2(bones[bone_ids[1]].pos, root))
+    const jointDir = normalize(subv2(bones[family.ik_bone_ids[1]].pos, root))
     const baseDir = normalize(subv2(target, root))
     const dir = jointDir.x * baseDir.y - baseDir.x * jointDir.y;
     const baseAngle = Math.atan2(baseDir.y, baseDir.x)
@@ -165,8 +176,8 @@ function inverseKinematics(bones, ikRootIds) {
     }
 
     /* save rots to hash */
-    bone_ids.forEach((bid, b) => {
-      if (b == bone_ids.length - 1) {
+    family.ik_bone_ids.forEach((bid, b) => {
+      if (b == family.ik_bone_ids.length - 1) {
         return
       }
       ikRots[bones[bid].id] = bones[bid].rot
@@ -349,7 +360,7 @@ function constructVerts(bones) {
         return;
       }
 
-      const bindBone = bones.find((b) => b.id == bind.bone_id);
+      const bindBone = bones[bind.bone_id];
 
       for (bind_vert of bones[b].binds[bi].verts) {
         if (!bind.is_path) {
