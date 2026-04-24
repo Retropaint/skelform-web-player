@@ -11,8 +11,8 @@ function SkfGenericFormatFrame(frame, anim, isReverse, isLoop) {
   return frame
 }
 
-// temporary backport of v0.4.2 field.
-// SkfGenericAnimate() uses this, so this is mandatory
+/* temporary backport of v0.4.2 field.
+   SkfGenericAnimate() uses this, so this is mandatory */
 function SkfInitNextKf(anims) {
   for (anim of anims) {
     anim.keyframes.forEach((kf, k) => {
@@ -78,12 +78,10 @@ function normalize(vec) {
 }
 
 function fabrik(bones, bone_ids, root, target) {
-  let nextPos = target
+  let nextPos = { x: target.x, y: target.y }
   let nextLength = 0
   let rev_bone_ids = [];
-  for (let i = 0; i < bone_ids.length; i++) {
-    rev_bone_ids.push(bone_ids[i]);
-  }
+  copyArray(rev_bone_ids, bone_ids);
   rev_bone_ids.reverse().forEach((id, b) => {
     const length = mulv2f(normalize(subv2(nextPos, bones[id].pos)), nextLength)
     if (b != rev_bone_ids.length - 1) {
@@ -94,7 +92,7 @@ function fabrik(bones, bone_ids, root, target) {
     nextPos.y = bones[id].pos.y
   })
 
-  let prevPos = root
+  let prevPos = { x: root.x, y: root.y }
   let prevLength = 0
   bone_ids.forEach((id, b) => {
     const length = mulv2f(normalize(subv2(prevPos, bones[id].pos)), prevLength)
@@ -142,6 +140,8 @@ function inverseKinematics(bones, ikRootIds) {
 
     const root = { x: family.pos.x, y: family.pos.y };
     const target = { x: bones[family.ik_target_id].pos.x, y: bones[family.ik_target_id].pos.y };
+
+    // run the appropriate IK mode
     if (family.ik_mode == "FABRIK") {
       for (i = 0; i < 10; i++) {
         fabrik(bones, family.ik_bone_ids, root, target)
@@ -150,6 +150,7 @@ function inverseKinematics(bones, ikRootIds) {
       arcIk(bones, family.ik_bone_ids, root, target)
     }
 
+    // the IK modes above only change bone position; now rotate the bones such that they point to the next one
     const endBone = bones[family.ik_bone_ids[family.ik_bone_ids.length - 1]]
     let tipPos = { x: endBone.pos.x, y: endBone.pos.y };
     let rev_bone_ids = [];
@@ -163,6 +164,7 @@ function inverseKinematics(bones, ikRootIds) {
       tipPos = { x: bones[bid].pos.x, y: bones[bid].pos.y };
     })
 
+    // apply constraints, if appropriate
     const jointDir = normalize(subv2(bones[family.ik_bone_ids[1]].pos, root))
     const baseDir = normalize(subv2(target, root))
     const dir = jointDir.x * baseDir.y - baseDir.x * jointDir.y;
@@ -238,7 +240,7 @@ function SkfGenericAnimate(bones, anims, frames, smoothFrames) {
     }
   })
 
-  // reset bone fields w/ bitmasks
+  /* reset bone fields w/ bitmasks */
   const animatedMap = new Map();
   const FLAGS = {
     PositionX: 1 << 0,
