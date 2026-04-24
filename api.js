@@ -18,6 +18,7 @@ let skfCanvasTemplate = {
   stylesOpen: [],
   gl: {},
   program: {},
+  buffers: {},
   styleDrop: false
 };
 
@@ -37,6 +38,8 @@ async function SkfInit(skfData, canvas) {
   glprogram = SkfInitGl(skfCanvases[last].gl, skfCanvases[last].program);
   skfCanvases[last].gl = glprogram[0];
   skfCanvases[last].program = glprogram[1];
+  skfCanvases[last].buffers = glprogram[2];
+  SkfInitNextKf(skfCanvases[last].armature.animations);
   canvas.addEventListener('webglcontextlost', function(event) {
     event.preventDefault();
   }, false);
@@ -81,7 +84,12 @@ function SkfInitGl(gl, program) {
   }
   gl.useProgram(program);
 
-  return [gl, program];
+  let buffers = [];
+  buffers.push(gl.createBuffer());
+  buffers.push(gl.createBuffer());
+  buffers.push(gl.createBuffer());
+
+  return [gl, program, buffers];
 }
 
 function SkfClearScreen(canvas, clearColor, gl, program) {
@@ -92,7 +100,7 @@ function SkfClearScreen(canvas, clearColor, gl, program) {
   gl.viewport(0, 0, canvas.width, canvas.height);
 }
 
-function skfDrawMesh(verts, indices, atlasTex, gl, program) {
+function skfDrawMesh(verts, indices, atlasTex, gl, program, buffers) {
   /* convert pos and uv into arrays */
   pos = new Float32Array(verts.length * 2);
   uv = new Float32Array(verts.length * 2);
@@ -103,20 +111,18 @@ function skfDrawMesh(verts, indices, atlasTex, gl, program) {
     uv[idx * 2 + 1] = vert.uv.y;
   });
 
-  function bindAttribute(name, data, size) {
-    const buffer = gl.createBuffer();
+  function bindAttribute(name, data, size, buffer) {
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
 
     const loc = gl.getAttribLocation(program, name);
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
   }
-  bindAttribute("a_position", pos, 2);
-  bindAttribute("a_uv", uv, 2);
+  bindAttribute("a_position", pos, 2, buffers[0]);
+  bindAttribute("a_uv", uv, 2, buffers[1]);
 
-  const indexBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers[2]);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 
   gl.activeTexture(gl.TEXTURE0);
@@ -163,7 +169,7 @@ async function skfReadFile(fileBytes, gl) {
   return armature;
 }
 
-function SkfDraw(bones, styles, atlases, gl, program) {
+function SkfDraw(bones, styles, atlases, gl, program, buffers) {
   bones.forEach((bone, b) => {
     let tex = SkfGenericGetBoneTexture(bone.tex, styles);
     if (!tex) {
@@ -220,7 +226,7 @@ function SkfDraw(bones, styles, atlases, gl, program) {
       }
     }
 
-    skfDrawMesh(verts, indices, atlases[tex.atlas_idx].texture, gl, program);
+    skfDrawMesh(verts, indices, atlases[tex.atlas_idx].texture, gl, program, buffers);
   })
 }
 
@@ -488,7 +494,7 @@ function SkfNewFrame(time) {
         }
       }
     })
-    SkfDraw(bones, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program);
+    SkfDraw(bones, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program, skfc.buffers);
     if (skfc.elProgress) {
       anim = skfc.armature.animations[skfc.selectedAnim];
       const frame = SkfGenericTimeFrame(skfc.animTime, anim, false, true);

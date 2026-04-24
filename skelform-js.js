@@ -11,6 +11,19 @@ function SkfGenericFormatFrame(frame, anim, isReverse, isLoop) {
   return frame
 }
 
+// temporary backport of v0.4.2 field.
+// SkfGenericAnimate() uses this, so this is mandatory
+function SkfInitNextKf(anims) {
+  for (anim of anims) {
+    anim.keyframes.forEach((kf, k) => {
+      anim.keyframes[k].next_kf =
+        anim.keyframes.findIndex((okf) =>
+          okf.bone_id == kf.bone_id && okf.element == kf.element && okf.frame > kf.frame
+        );
+    })
+  }
+}
+
 function SkfGenericTimeFrame(time, anim, isReverse, isLoop) {
   const elapsed = time / 1000
   const frametime = 1 / anim.fps
@@ -177,16 +190,42 @@ function SkfGenericGetBoneTexture(texName, styles) {
 
 function SkfGenericAnimate(bones, anims, frames, smoothFrames) {
   anims.forEach((anim, a) => {
-    bones.forEach(bone => {
-      bone.pos.x = interpolateKeyframes(bone.id, bone.pos.x, anim.keyframes, "PositionX", frames[a], smoothFrames[a])
-      bone.pos.y = interpolateKeyframes(bone.id, bone.pos.y, anim.keyframes, "PositionY", frames[a], smoothFrames[a])
-      bone.rot = interpolateKeyframes(bone.id, bone.rot, anim.keyframes, "Rotation", frames[a], smoothFrames[a])
-      bone.scale.x = interpolateKeyframes(bone.id, bone.scale.x, anim.keyframes, "ScaleX", frames[a], smoothFrames[a])
-      bone.scale.y = interpolateKeyframes(bone.id, bone.scale.y, anim.keyframes, "ScaleY", frames[a], smoothFrames[a])
-    })
+    for (k = 0; k < anim.keyframes.length; k++) {
+      let kf = anim.keyframes[k];
+
+      // only prev keyframes are considered
+      if (kf.frame > frames[a]) {
+        break;
+      }
+
+      if (kf.next_kf == -1) {
+        kf.next_kf = k;
+      }
+      let nextKf = anim.keyframes[kf.next_kf];
+
+      // this is a redundant keyframe if the next one is also before this frame
+      if (nextKf.frame < frames[a]) {
+        continue;
+      }
+
+      let bone = bones[kf.bone_id];
+
+      let c1 = kf.element[0];
+      let c2 = kf.element[kf.element.length - 1];
+      if (c1 == 'P' && c2 == 'X')
+        bone.pos.x = interpolateKeyframes(bone.pos.x, kf, nextKf, frames[a], smoothFrames[a]);
+      if (c1 == 'P' && c2 == 'Y')
+        bone.pos.y = interpolateKeyframes(bone.pos.y, kf, nextKf, frames[a], smoothFrames[a]);
+      if (c1 == 'R' && c2 == 'n')
+        bone.rot = interpolateKeyframes(bone.rot, kf, nextKf, frames[a], smoothFrames[a]);
+      if (c1 == 'S' && c2 == 'X')
+        bone.scale.x = interpolateKeyframes(bone.scale.x, kf, nextKf, frames[a], smoothFrames[a]);
+      if (c1 == 'S' && c2 == 'Y')
+        bone.scale.y = interpolateKeyframes(bone.scale.y, kf, nextKf, frames[a], smoothFrames[a]);
+    }
   })
 
-  // eldtrich horror beyond human comprehension
+  // reset bone fields w/ bitmasks
   const animatedMap = new Map();
   const FLAGS = {
     PositionX: 1 << 0,
@@ -214,10 +253,6 @@ function SkfGenericAnimate(bones, anims, frames, smoothFrames) {
   }
 }
 
-function isAnimated(bone_id, anims, element) {
-
-}
-
 function interpolate(current, max, startVal, endVal) {
   if (max == 0 || current >= max) {
     return endVal
@@ -243,51 +278,11 @@ function _skfBinarySearchKeyframes(keyframes, frame) {
   return lo
 }
 
-function interpolateKeyframes(bone_id, field, keyframes, element, frame, smoothFrames) {
-  let prev_frame = -1;
-  let prev_value = -1;
-  let next_frame = -1;
-  let next_value = -1;
-
-  for (kf of keyframes) {
-    if (kf.frame <= frame) {
-      if (kf.element == element && kf.bone_id == bone_id) {
-        prev_frame = kf.frame;
-        prev_value = kf.value;
-      }
-    } else {
-      break;
-    }
-  }
-
-  start = _skfBinarySearchKeyframes(keyframes, frame);
-  for (let i = 0; i < keyframes.length; i++) {
-    kf = keyframes[i];
-    if (kf.frame > frame && kf.element == element && kf.bone_id == bone_id) {
-      next_frame = kf.frame;
-      next_value = kf.value;
-      break
-    }
-  }
-
-  if (prev_frame == -1) {
-    prev_frame = next_frame;
-    prev_value = next_value;
-  }
-  if (next_frame == -1) {
-    next_frame = prev_frame;
-    next_value = prev_value;
-  }
-
-  if (next_frame == -1 && prev_frame == -1) {
-    return field;
-  }
-
-  const totalFrames = next_frame - prev_frame
-  const currentFrame = frame - prev_frame
-
-  const result = interpolate(currentFrame, totalFrames, prev_value, next_value)
-  return interpolate(currentFrame, smoothFrames, field, result)
+function interpolateKeyframes(field, prevKf, nextKf, frame, smoothFrame) {
+  const totalFrames = nextKf.frame - prevKf.frame
+  const currentFrame = frame - prevKf.frame
+  const result = interpolate(currentFrame, totalFrames, prevKf.value, nextKf.value)
+  return interpolate(currentFrame, smoothFrame, field, result)
 }
 
 function resetInheritance(cachedBones, ogBones) {
