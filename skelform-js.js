@@ -121,13 +121,11 @@ function inverseKinematics(bones, ikRootIds) {
     const target = structuredClone(bones[family.ik_target_id].pos);
     if (family.ik_mode == "FABRIK") {
       for (i = 0; i < 10; i++) {
-        fabrik(bones, structuredClone(bone_ids), root, target)
+        fabrik(bones, bone_ids, root, target)
       }
     } else {
-      arcIk(bones, structuredClone(bone_ids), root, target)
+      arcIk(bones, bone_ids, root, target)
     }
-
-
 
     const endBone = bones[bone_ids[bone_ids.length - 1]]
     let tipPos = structuredClone(endBone.pos);
@@ -188,35 +186,36 @@ function SkfGenericAnimate(bones, anims, frames, smoothFrames) {
     })
   })
 
-  bones.forEach(bone => {
-    if (!isAnimated(bone.id, anims, "PositionX")) {
-      bone.pos.x = interpolate(frames[0], smoothFrames[0], bone.pos.x, bone.init_pos.x);
+  // eldtrich horror beyond human comprehension
+  const animatedMap = new Map();
+  const FLAGS = {
+    PositionX: 1 << 0,
+    PositionY: 1 << 1,
+    Rotation: 1 << 2,
+    ScaleX: 1 << 3,
+    ScaleY: 1 << 4,
+    Hidden: 1 << 5,
+  };
+  for (const anim of anims) {
+    for (const kf of anim.keyframes) {
+      let mask = animatedMap.get(kf.bone_id) || 0;
+      mask |= FLAGS[kf.element] || 0;
+      animatedMap.set(kf.bone_id, mask);
     }
-    if (!isAnimated(bone.id, anims, "PositionY")) {
-      bone.pos.y = interpolate(frames[0], smoothFrames[0], bone.pos.y, bone.init_pos.y);
-    }
-    if (!isAnimated(bone.id, anims, "Rotation")) {
-      bone.rot = interpolate(frames[0], smoothFrames[0], bone.rot, bone.init_rot);
-    }
-    if (!isAnimated(bone.id, anims, "ScaleX")) {
-      bone.scale.x = interpolate(frames[0], smoothFrames[0], bone.scale.x, bone.init_scale.x);
-    }
-    if (!isAnimated(bone.id, anims, "ScaleY")) {
-      bone.scale.y = interpolate(frames[0], smoothFrames[0], bone.scale.y, bone.init_scale.y);
-    }
-  })
+  }
+  for (const bone of bones) {
+    const mask = animatedMap.get(bone.id) || 0;
+    if (!(mask & FLAGS.PositionX)) bone.pos.x = bone.init_pos.x;
+    if (!(mask & FLAGS.PositionY)) bone.pos.y = bone.init_pos.y;
+    if (!(mask & FLAGS.Rotation)) bone.rot = bone.init_rot;
+    if (!(mask & FLAGS.ScaleX)) bone.scale.x = bone.init_scale.x;
+    if (!(mask & FLAGS.ScaleY)) bone.scale.y = bone.init_scale.y;
+    if (!(mask & FLAGS.Hidden)) bone.hidden = bone.init_hidden == 1;
+  }
 }
 
 function isAnimated(bone_id, anims, element) {
-  let yes = false;
-  anims.forEach((anim, a) => {
-    anim.keyframes.forEach(kf => {
-      if (kf.bone_id == bone_id && kf.element == element) {
-        yes = true;
-      }
-    })
-  })
-  return yes
+
 }
 
 function interpolate(current, max, startVal, endVal) {
@@ -230,38 +229,73 @@ function interpolate(current, max, startVal, endVal) {
   return result
 }
 
+function _skfBinarySearchKeyframes(keyframes, frame) {
+  let lo = 0, hi = keyframes.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const kf = keyframes[mid];
+    if (kf.frame <= frame) {
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return lo
+}
+
 function interpolateKeyframes(bone_id, field, keyframes, element, frame, smoothFrames) {
-  let prev = false;
-  let next = false;
+  let prev_frame = -1;
+  let prev_value = -1;
+  let next_frame = -1;
+  let next_value = -1;
+
   for (kf of keyframes) {
-    if (kf.frame <= frame && kf.element == element && kf.bone_id == bone_id) {
-      prev = kf
+    if (kf.frame <= frame) {
+      if (kf.element == element && kf.bone_id == bone_id) {
+        prev_frame = kf.frame;
+        prev_value = kf.value;
+      }
+    } else {
+      break;
     }
   }
 
-  for (kf of keyframes) {
+  start = _skfBinarySearchKeyframes(keyframes, frame);
+  for (let i = 0; i < keyframes.length; i++) {
+    kf = keyframes[i];
     if (kf.frame > frame && kf.element == element && kf.bone_id == bone_id) {
-      next = kf
+      next_frame = kf.frame;
+      next_value = kf.value;
       break
     }
   }
 
-  if (!prev) {
-    prev = next
+  if (prev_frame == -1) {
+    prev_frame = next_frame;
+    prev_value = next_value;
   }
-  if (!next) {
-    next = prev
+  if (next_frame == -1) {
+    next_frame = prev_frame;
+    next_value = prev_value;
   }
 
-  if (!prev && !next) {
+  if (next_frame == -1 && prev_frame == -1) {
     return field;
   }
 
-  const totalFrames = next.frame - prev.frame
-  const currentFrame = frame - prev.frame
+  const totalFrames = next_frame - prev_frame
+  const currentFrame = frame - prev_frame
 
-  const result = interpolate(currentFrame, totalFrames, prev.value, next.value)
+  const result = interpolate(currentFrame, totalFrames, prev_value, next_value)
   return interpolate(currentFrame, smoothFrames, field, result)
+}
+
+function resetInheritance(cachedBones, ogBones) {
+  cachedBones.forEach((bone, b) => {
+    cachedBones[b].pos = ogBones[b].pos;
+    cachedBones[b].scale = ogBones[b].scale;
+    cachedBones[b].rot = ogBones[b].rot;
+  })
 }
 
 function inheritance(bones, ikRots) {
@@ -286,12 +320,22 @@ function inheritance(bones, ikRots) {
   return bones
 }
 
-function SkfGenericConstruct(rawBones, ikRootIds) {
-  const inhBones = inheritance(structuredClone(rawBones), [])
-  const ikRots = inverseKinematics(structuredClone(inhBones), ikRootIds)
-  let finalBones = inheritance(structuredClone(rawBones), ikRots)
-  constructVerts(finalBones)
-  return finalBones
+function SkfGenericConstruct(rawBones, ikRootIds, cachedBones) {
+  if (!cachedBones) {
+    cachedBones = structuredClone(rawBones);
+  }
+
+  resetInheritance(cachedBones, rawBones);
+  inheritance(cachedBones, [])
+
+  ikRots = inverseKinematics(cachedBones, ikRootIds)
+
+  resetInheritance(cachedBones, rawBones);
+  inheritance(cachedBones, ikRots)
+
+  constructVerts(cachedBones)
+
+  return cachedBones;
 }
 
 function constructVerts(bones) {
@@ -323,8 +367,8 @@ function constructVerts(bones) {
         const prev = bi > 0 ? bi - 1 : bi
         const next = bi + 1 <= bones[b].binds.length - 1 ? bi + 1 : bones[b].binds.length - 1
         const bone = bones[b];
-        const prevBone = bones.find((b) => b.id == bone.binds[prev].bone_id)
-        const nextBone = bones.find((b) => b.id == bone.binds[next].bone_id)
+        const prevBone = bones[bone.binds[prev].bone_id];
+        const nextBone = bones[bone.binds[next].bone_id];
 
         const prevDir = subv2(bindBone.pos, prevBone.pos)
         const nextDir = subv2(nextBone.pos, bindBone.pos)

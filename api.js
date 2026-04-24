@@ -13,6 +13,7 @@ let skfCanvasTemplate = {
   elPlay: {},
   elProgress: {},
   armature: {},
+  cachedBones: [],
   activeStyles: [],
   stylesOpen: [],
   gl: {},
@@ -177,13 +178,21 @@ function SkfDraw(bones, styles, atlases, gl, program) {
     const tbot = (tex.offset.y + tex.size.y) / size.y;
     const tsize = tex.size;
 
-    let verts;
+    let verts = [];
     let indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
     if (bone.vertices) {
-      verts = structuredClone(bone.vertices);
-      for (vert of verts) {
+      for (vert of bone.vertices) {
+        verts.push({});
+        verts[verts.length - 1].uv = {
+          x: vert.uv.x,
+          y: vert.uv.y
+        }
+        verts[verts.length - 1].pos = {
+          x: vert.pos.x,
+          y: vert.pos.y
+        }
         const uvsize = { x: tright - tleft, y: tbot - ttop };
-        vert.uv = { x: tleft + (uvsize.x * vert.uv.x), y: ttop + (uvsize.y * vert.uv.y) };
+        verts[verts.length - 1].uv = { x: tleft + (uvsize.x * vert.uv.x), y: ttop + (uvsize.y * vert.uv.y) };
       }
       indices = new Uint16Array(bone.indices);
     } else {
@@ -463,8 +472,9 @@ function SkfNewFrame(time) {
     const frame = SkfGenericTimeFrame(skfc.animTime, anim, false, true);
     const smooth = (skfc.playing) ? skfc.smoothFrames : 0;
     SkfGenericAnimate(skfc.armature.bones, [anim], [frame], [smooth]);
-    bones = SkfGenericConstruct(skfc.armature.bones, skfc.armature.ik_root_ids, skfc.constructOptions);
+    skfc.armature.cachedBones = SkfGenericConstruct(skfc.armature.bones, skfc.armature.ik_root_ids, skfc.armature.cachedBones);
     let options = skfc.constructOptions;
+    bones = skfc.armature.cachedBones;
     bones.forEach((bone, b) => {
       bones[b].scale = mulv2(bones[b].scale, options.scale)
       bones[b].pos = mulv2(bones[b].pos, options.scale)
