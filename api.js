@@ -124,27 +124,20 @@ function skfDrawMesh(verts, indices, atlasTex, gl, program, buffers) {
     uv[idx * 2 + 1] = vert.uv.y;
   });
 
-  function bindAttribute(name, data, size, buffer) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
-  }
-  bindAttribute("a_position", pos, 2, buffers[0]);
-  bindAttribute("a_uv", uv, 2, buffers[1]);
-
+  // buffer pos
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers[0]);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, pos);
+  // buffer UV 
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffers[1]);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, uv);
+  // buffer indices
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers[2]);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.DYNAMIC_DRAW);
 
   gl.activeTexture(gl.TEXTURE0);
-
-  if (!atlasTex) {
-    gl.bindTexture(gl.TEXTURE_2D, skfPlaceholderPixel);
-  } else {
-    gl.bindTexture(gl.TEXTURE_2D, atlasTex);
-  }
-
+  gl.bindTexture(gl.TEXTURE_2D, atlasTex);
   const u_textureLoc = gl.getUniformLocation(program, "u_texture");
   gl.uniform1i(u_textureLoc, 0);
-
   gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 }
 
@@ -179,10 +172,22 @@ async function skfReadFile(fileBytes, gl) {
 }
 
 function SkfDraw(bones, styles, atlases, gl, program, buffers) {
+  let verts = [];
+  let indices = [];
+  let lastAtlasIdx = 0;
   bones.forEach((bone, b) => {
     let tex = SkfGenericGetBoneTexture(bone.tex, styles);
     if (!tex) {
       return
+    }
+
+    // if this bone uses a different texture atlas, render everything before it and prepare
+    // to render anything that uses this atlas
+    if (tex.atlas_idx != lastAtlasIdx) {
+      skfDrawMesh(verts, indices, atlases[tex.atlas_idx].texture, gl, program, buffers);
+      verts = [];
+      indices = [];
+      lastAtlasIdx = tex.atlas_idx;
     }
 
     const size = atlases[tex.atlas_idx].size;
@@ -193,8 +198,8 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers) {
     const tbot = (tex.offset.y + tex.size.y) / size.y;
     const tsize = tex.size;
 
-    let verts = [];
-    let indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+    let thisIndices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+    let vertLen = 4;
     if (bone.vertices) {
       for (vert of bone.vertices) {
         verts.push({});
@@ -209,9 +214,10 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers) {
         const uvsize = { x: tright - tleft, y: tbot - ttop };
         verts[verts.length - 1].uv = { x: tleft + (uvsize.x * vert.uv.x), y: ttop + (uvsize.y * vert.uv.y) };
       }
-      indices = new Uint16Array(bone.indices);
+      thisIndices = new Uint16Array(bone.indices);
+      vertLen = bone.vertices.length;
     } else {
-      verts = [{
+      rectVerts = [{
         uv: { x: tleft, y: ttop },
         pos: { x: (-tsize.x / 2 * bone.scale.x), y: (-tsize.y / 2 * bone.scale.y) },
       },
@@ -230,13 +236,25 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers) {
 
       const invPos = { x: bone.pos.x, y: -bone.pos.y };
       for (let i = 0; i < 4; i++) {
-        verts[i].pos = rotate(verts[i].pos, -bone.rot);
-        verts[i].pos = addv2(verts[i].pos, invPos);
+        rectVerts[i].pos = rotate(rectVerts[i].pos, -bone.rot);
+        rectVerts[i].pos = addv2(rectVerts[i].pos, invPos);
       }
+
+      verts.push(rectVerts[0]);
+      verts.push(rectVerts[1]);
+      verts.push(rectVerts[2]);
+      verts.push(rectVerts[3]);
     }
 
-    skfDrawMesh(verts, indices, atlases[tex.atlas_idx].texture, gl, program, buffers);
+    // batch this bone's indices, with proper offsets
+    for (idx of thisIndices) {
+      indices.push(idx + verts.length - vertLen);
+    }
   })
+
+  if (verts && indices) {
+    skfDrawMesh(verts, indices, atlases[lastAtlasIdx].texture, gl, program, buffers);
+  }
 }
 
 function skfDrawPoints(poses) {

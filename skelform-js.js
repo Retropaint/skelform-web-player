@@ -189,14 +189,13 @@ function inverseKinematics(bones, ikRootIds) {
 
 function SkfGenericGetBoneTexture(texName, styles) {
   finalTex = false
-  styles.forEach(style => {
-    style.textures.forEach(tex => {
+  for (style of styles) {
+    for (tex of style.textures) {
       if (texName == tex.name && !finalTex) {
-        finalTex = tex
+        return tex;
       }
-    })
-  })
-  return finalTex
+    }
+  }
 }
 
 function SkfGenericAnimate(bones, anims, frames, smoothFrames) {
