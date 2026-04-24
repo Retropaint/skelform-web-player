@@ -175,7 +175,20 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers) {
   let verts = [];
   let indices = [];
   let lastAtlasIdx = 0;
+  let hiddens = [];
   bones.forEach((bone, b) => {
+    if (bone.name == "Root") {
+      console.log(bone.hidden);
+    }
+    let hidden = bone.hidden || false;
+    if (bone.parent_id != -1 && hiddens[bone.parent_id]) {
+      hidden = true;
+    }
+    hiddens.push(hidden);
+    if (hidden) {
+      return;
+    }
+
     let tex = SkfGenericGetBoneTexture(bone.tex, styles);
     if (!tex) {
       return
@@ -254,7 +267,7 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers) {
     }
   })
 
-  if (verts && indices) {
+  if (verts.length > 0 && indices.length > 0) {
     skfDrawMesh(verts, indices, atlases[lastAtlasIdx].texture, gl, program, buffers);
   }
 }

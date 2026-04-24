@@ -214,7 +214,7 @@ function SkfGenericAnimate(bones, anims, frames, smoothFrames) {
       let nextKf = anim.keyframes[kf.next_kf];
 
       // this is a redundant keyframe if the next one is also before this frame
-      if (nextKf.frame < frames[a]) {
+      if (nextKf.frame < frames[a] && kf.next_kf != k) {
         continue;
       }
 
@@ -232,6 +232,9 @@ function SkfGenericAnimate(bones, anims, frames, smoothFrames) {
         bone.scale.x = interpolateKeyframes(bone.scale.x, kf, nextKf, frames[a], smoothFrames[a]);
       if (c1 == 'S' && c2 == 'Y')
         bone.scale.y = interpolateKeyframes(bone.scale.y, kf, nextKf, frames[a], smoothFrames[a]);
+      if (c1 == 'H' && c2 == 'n') {
+        bone.hidden = kf.value == 1;
+      }
     }
   })
 
@@ -259,7 +262,7 @@ function SkfGenericAnimate(bones, anims, frames, smoothFrames) {
     if (!(mask & FLAGS.Rotation)) bone.rot = bone.init_rot;
     if (!(mask & FLAGS.ScaleX)) bone.scale.x = bone.init_scale.x;
     if (!(mask & FLAGS.ScaleY)) bone.scale.y = bone.init_scale.y;
-    if (!(mask & FLAGS.Hidden)) bone.hidden = bone.init_hidden == 1;
+    if (!(mask & FLAGS.Hidden)) bone.hidden = bone.init_hidden || false;
   }
 }
 
@@ -300,6 +303,7 @@ function resetInheritance(cachedBones, ogBones) {
     cachedBones[b].pos = ogBones[b].pos;
     cachedBones[b].scale = ogBones[b].scale;
     cachedBones[b].rot = ogBones[b].rot;
+    cachedBones[b].hidden = ogBones[b].hidden;
   })
 }
 
