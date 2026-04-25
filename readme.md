@@ -26,15 +26,27 @@ Note: this is the player frontend, and requires the
         let skellington = await SkfDownloadSample("skellington.skf");
         await SkfInit(skellington, glcanvas);
 
+        // more armatures can continue being loaded
+        let skellina = await SkfDownloadSample("skellina.skf");
+        await SkfInit(skellina, glcanvas2);
+
         // Initialized armatures go into an 'skfCanvases' array.
         // All configurable settings are shown below, assuming the first canvas.
         // Everything else in each skfCanvas is automatically configured and should not be tampered with.
-        skfCanvases[0].activeStyles = [skfCanvases[0].armature.styles[1]];
+        skfCanvases[0].activeStyles = [skfCanvases[0].armature.styles[3]];
         skfCanvases[0].selectedAnim = 1;
         skfCanvases[0].smoothFrames = 0;
         skfCanvases[0].playing = true;
         skfCanvases[0].constructOptions.scale = { x: 0.125, y: 0.125 };
         skfCanvases[0].constructOptions.position = { x: 300, y: -250 };
+
+        // configs for 2nd armature
+        skfCanvases[1].activeStyles = [skfCanvases[1].armature.styles[2]];
+        skfCanvases[1].selectedAnim = 1;
+        skfCanvases[1].smoothFrames = 0;
+        skfCanvases[1].playing = true;
+        skfCanvases[1].constructOptions.scale = { x: 0.125, y: 0.125 };
+        skfCanvases[1].constructOptions.position = { x: 300, y: -250 };
 
         // Show web player. This is optional, and is only for showcases.
         // Parameters:
@@ -42,15 +54,24 @@ Note: this is the player frontend, and requires the
         // - skfCanvas (use skfCanvases array)
         // - Show SkelForm branding? (default false)
         SkfShowPlayer("player", skfCanvases[0], false);
+        // 2nd armature web player
+        SkfShowPlayer("player2", skfCanvases[1], false);
 
-        // Start animating!
+        // Start animating all armatures!
+        // This must be called only once
         requestAnimationFrame(SkfNewFrame);
     }
     start();
 </script>
 
+<!-- 1st armature web player -->
 <div id="player" style="width: 600px; height: 600px">
     <canvas id="glcanvas" width="600" height="500"></canvas>
+</div>
+
+<!-- 2nd armature web player -->
+<div id="player2" style="width: 600px; height: 600px">
+    <canvas id="glcanvas2" width="600" height="500"></canvas>
 </div>
 ```
 
