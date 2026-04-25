@@ -17,6 +17,7 @@ let skfCanvasTemplate = {
   cachedBones: [],
   activeStyles: [],
   stylesOpen: [],
+  rendered: false,
 
   // WebGL stuff
   gl: {},
@@ -206,19 +207,20 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers, uniforms) {
   let lastAtlasIdx = 0;
   let hiddens = new Array(bones.length).fill(false);
   bones.sort((a, b) => (a.zindex > b.zindex) ? 1 : -1);
-  bones.forEach((bone, b) => {
+  for (let b = 0; b < bones.length; b++) {
+    let bone = bones[b];
     let hidden = bone.hidden || false;
     if (bone.parent_id != -1 && hiddens[bone.parent_id]) {
       hidden = true;
     }
     hiddens[b] = hidden;
     if (hidden) {
-      return;
+      continue;
     }
 
     let tex = SkfGenericGetBoneTexture(bone.tex, styles);
     if (!tex) {
-      return
+      continue
     }
 
     // if this bone uses a different texture atlas, render everything before it and prepare
@@ -292,7 +294,7 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers, uniforms) {
     for (idx of thisIndices) {
       indices.push(idx + verts.length - vertLen);
     }
-  })
+  }
 
   if (verts.length > 0 && indices.length > 0) {
     skfDrawMesh(verts, indices, atlases[lastAtlasIdx].texture, gl, program, buffers, uniforms);
@@ -467,6 +469,7 @@ function SkfShowPlayer(id, skfCanvas, showSkfBranding) {
     frames = anim.keyframes[anim.keyframes.length - 1].frame;
     frametime = 1 / anim.fps;
     skfCanvas.animTime = frames * slider.value * frametime * 1000;
+    skfCanvas.rendered = false;
   });
 
   let toolbarFlex = newEl("div", toolbarContainer, "skf-toolbar-container");
@@ -491,6 +494,7 @@ function SkfShowPlayer(id, skfCanvas, showSkfBranding) {
     skfCanvas.selectedAnim = animSelect.value;
     skfCanvas.animTime = 0;
     skfCanvas.elProgress.value = 0.0;
+    skfCanvas.rendered = false;
   });
 
   // style select
@@ -519,6 +523,7 @@ function SkfShowPlayer(id, skfCanvas, showSkfBranding) {
         styleEl.classList.remove("selected");
       }
       skfCanvas.activeStyles.sort(function(a, b) { return (a.id < b.id) ? -1 : 1 });
+      skfCanvas.rendered = false;
     })
   });
   // push style menu below button
@@ -541,8 +546,12 @@ function SkfShowPlayer(id, skfCanvas, showSkfBranding) {
 let skfLastTime = 0;
 function SkfNewFrame(time) {
   for (skfc of skfCanvases) {
+    if (!skfc.playing && skfc.rendered) {
+      continue;
+    }
     SkfClearScreen(skfc.elCanvas, skfc.lastCanvasSize, skfc.gl, skfc.program, skfc.uniforms);
     skfc.animTime += (skfc.playing) ? time - skfLastTime : 0;
+    skfc.rendered = true;
     anim = skfc.armature.animations[skfc.selectedAnim];
     const frame = SkfGenericTimeFrame(skfc.animTime, anim, false, true);
     const smooth = (skfc.playing) ? skfc.smoothFrames : 0;
@@ -550,7 +559,7 @@ function SkfNewFrame(time) {
     skfc.armature.cachedBones = SkfGenericConstruct(skfc.armature.bones, skfc.armature.ik_root_ids, skfc.armature.cachedBones);
     let options = skfc.constructOptions;
     bones = skfc.armature.cachedBones;
-    bones.forEach((bone, b) => {
+    for (let b = 0; b < bones.length; b++) {
       bones[b].scale = mulv2(bones[b].scale, options.scale)
       bones[b].pos = mulv2(bones[b].pos, options.scale)
       bones[b].pos = addv2(bones[b].pos, options.position)
@@ -562,7 +571,7 @@ function SkfNewFrame(time) {
           vert.pos = addv2(vert.pos, { x: options.position.x, y: -options.position.y });
         }
       }
-    })
+    }
     SkfDraw(bones, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program, skfc.buffers, skfc.uniforms);
     if (skfc.elProgress) {
       anim = skfc.armature.animations[skfc.selectedAnim];
