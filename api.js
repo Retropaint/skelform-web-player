@@ -115,6 +115,10 @@ function SkfInitGl(gl, program, clearColor, canvas) {
   gl.vertexAttribPointer(attrib_uv, 2, gl.FLOAT, false, 0, 0);
   gl.bufferData(gl.ARRAY_BUFFER, 5000, gl.DYNAMIC_DRAW);
 
+  // initialize indices buffer
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers[2]);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, 5000, gl.DYNAMIC_DRAW);
+
   gl.clearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
 
   // initialize uniforms to use later
@@ -122,6 +126,7 @@ function SkfInitGl(gl, program, clearColor, canvas) {
     resolution: gl.getUniformLocation(program, "u_resolution"),
     texture: gl.getUniformLocation(program, "u_texture")
   };
+  gl.uniform1i(uniforms.texture, 0);
 
   return [gl, program, buffers, uniforms];
 }
@@ -134,7 +139,6 @@ function SkfClearScreen(canvas, lastCanvasSize, gl, program, uniforms) {
   if (lastCanvasSize.x != canvas.width || lastCanvasSize.y != canvas.height) {
     lastCanvasSize.x = canvas.width;
     lastCanvasSize.y = canvas.height;
-    console.log(lastCanvasSize)
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
   }
@@ -144,12 +148,12 @@ function skfDrawMesh(verts, indices, atlasTex, gl, program, buffers, uniforms) {
   /* convert pos and uv into arrays */
   pos = new Float32Array(verts.length * 2);
   uv = new Float32Array(verts.length * 2);
-  verts.forEach((vert, idx) => {
-    pos[idx * 2] = vert.pos.x;
-    pos[idx * 2 + 1] = vert.pos.y;
-    uv[idx * 2] = vert.uv.x;
-    uv[idx * 2 + 1] = vert.uv.y;
-  });
+  for (let i = 0; i < verts.length; i++) {
+    pos[i * 2] = verts[i].pos.x;
+    pos[i * 2 + 1] = verts[i].pos.y;
+    uv[i * 2] = verts[i].uv.x;
+    uv[i * 2 + 1] = verts[i].uv.y;
+  }
 
   // buffer pos
   gl.bindBuffer(gl.ARRAY_BUFFER, buffers[0]);
@@ -159,11 +163,10 @@ function skfDrawMesh(verts, indices, atlasTex, gl, program, buffers, uniforms) {
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, uv);
   // buffer indices
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers[2]);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.DYNAMIC_DRAW);
+  gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, new Uint16Array(indices));
 
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, atlasTex);
-  gl.uniform1i(uniforms.texture, 0);
   gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 }
 
@@ -476,6 +479,7 @@ function SkfShowPlayer(id, skfCanvas, showSkfBranding) {
   playButton.innerText = "Play";
   playButton.addEventListener("click", () => {
     skfCanvas.playing = !skfCanvas.playing;
+    playButton.innerText = (playButton.innerText == "Play") ? "Pause" : "Play";
   });
 
   // animation select
@@ -539,7 +543,6 @@ function SkfNewFrame(time) {
   for (skfc of skfCanvases) {
     SkfClearScreen(skfc.elCanvas, skfc.lastCanvasSize, skfc.gl, skfc.program, skfc.uniforms);
     skfc.animTime += (skfc.playing) ? time - skfLastTime : 0;
-    skfc.elPlay.innerText = (skfc.playing) ? "Pause" : "Play ";
     anim = skfc.armature.animations[skfc.selectedAnim];
     const frame = SkfGenericTimeFrame(skfc.animTime, anim, false, true);
     const smooth = (skfc.playing) ? skfc.smoothFrames : 0;
