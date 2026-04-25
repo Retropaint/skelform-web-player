@@ -39,6 +39,9 @@ async function SkfInit(skfData, canvas) {
   skfCanvases[last].gl = glprogram[0];
   skfCanvases[last].program = glprogram[1];
   skfCanvases[last].buffers = glprogram[2];
+  for (bone of skfCanvases[last].armature.bones) {
+    bone.zindex = bone.zindex || 0;
+  }
   SkfInitNextKf(skfCanvases[last].armature.animations);
   canvas.addEventListener('webglcontextlost', function(event) {
     event.preventDefault();
