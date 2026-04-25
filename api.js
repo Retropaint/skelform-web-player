@@ -178,13 +178,14 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers) {
   let verts = [];
   let indices = [];
   let lastAtlasIdx = 0;
-  let hiddens = [];
+  let hiddens = new Array(bones.length).fill(false);
+  bones.sort((a, b) => (a.zindex > b.zindex) ? 1 : -1);
   bones.forEach((bone, b) => {
     let hidden = bone.hidden || false;
     if (bone.parent_id != -1 && hiddens[bone.parent_id]) {
       hidden = true;
     }
-    hiddens.push(hidden);
+    hiddens[b] = hidden;
     if (hidden) {
       return;
     }

@@ -334,6 +334,8 @@ function inheritance(bones, ikRots) {
 function SkfGenericConstruct(rawBones, ikRootIds, cachedBones) {
   if (!cachedBones) {
     cachedBones = structuredClone(rawBones);
+  } else {
+    cachedBones.sort((a, b) => (a.id > b.id) ? 1 : -1)
   }
 
   resetInheritance(cachedBones, rawBones);
