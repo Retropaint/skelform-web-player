@@ -8,7 +8,7 @@ function SkfGenericFormatFrame(frame, anim, isReverse, isLoop) {
     frame = lastFrame - frame
   }
 
-  return frame
+  return Math.round(frame)
 }
 
 /* temporary backport of v0.4.2 field.

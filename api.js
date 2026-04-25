@@ -17,7 +17,8 @@ let skfCanvasTemplate = {
   cachedBones: [],
   activeStyles: [],
   stylesOpen: [],
-  rendered: false,
+  rendered: false, // used to render at least one frame if an anim isn't playing
+  lastAnimFrame: -1, // if anim frame is same as this, skip re-rendering
 
   // WebGL stuff
   gl: {},
@@ -549,11 +550,16 @@ function SkfNewFrame(time) {
     if (!skfc.playing && skfc.rendered) {
       continue;
     }
-    SkfClearScreen(skfc.elCanvas, skfc.lastCanvasSize, skfc.gl, skfc.program, skfc.uniforms);
     skfc.animTime += (skfc.playing) ? time - skfLastTime : 0;
-    skfc.rendered = true;
     anim = skfc.armature.animations[skfc.selectedAnim];
     const frame = SkfGenericTimeFrame(skfc.animTime, anim, false, true);
+
+    // skip rendering if this is the same frame
+    if (frame == skfc.lastAnimFrame && skfc.rendered) {
+      continue;
+    }
+    skfc.lastAnimFrame = frame;
+
     const smooth = (skfc.playing) ? skfc.smoothFrames : 0;
     SkfGenericAnimate(skfc.armature.bones, [anim], [frame], [smooth]);
     skfc.armature.cachedBones = SkfGenericConstruct(skfc.armature.bones, skfc.armature.ik_root_ids, skfc.armature.cachedBones);
@@ -572,12 +578,14 @@ function SkfNewFrame(time) {
         }
       }
     }
+    SkfClearScreen(skfc.elCanvas, skfc.lastCanvasSize, skfc.gl, skfc.program, skfc.uniforms);
     SkfDraw(bones, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program, skfc.buffers, skfc.uniforms);
     if (skfc.elProgress) {
       anim = skfc.armature.animations[skfc.selectedAnim];
       const frame = SkfGenericTimeFrame(skfc.animTime, anim, false, true);
       skfc.elProgress.value = frame / anim.keyframes[anim.keyframes.length - 1].frame;
     }
+    skfc.rendered = true;
   }
 
   skfLastTime = time;
