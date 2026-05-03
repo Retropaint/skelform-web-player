@@ -23,28 +23,28 @@ Note: this is the player frontend, and requires the
     async function start() {
         // Download and initialize .skf file and its armature.
         // Note: both functions below are async
+        let rev_physics_frames = 5;
         let skellington = await SkfDownloadSample("skellington.skf");
-        await SkfInit(skellington, glcanvas);
+        await SkfInit(skellington, glcanvas, rev_physics_frames);
 
         // more armatures can continue being loaded
+        rev_physics_frames = 30;
         let skellina = await SkfDownloadSample("skellina.skf");
-        await SkfInit(skellina, glcanvas2);
+        await SkfInit(skellina, glcanvas2, rev_physics_frames);
 
         // Initialized armatures go into an 'skfCanvases' array.
         // All configurable settings are shown below, assuming the first canvas.
         // Everything else in each skfCanvas is automatically configured and should not be tampered with.
         skfCanvases[0].activeStyles = [skfCanvases[0].armature.styles[3]];
-        skfCanvases[0].selectedAnim = 1;
+        skfCanvases[0].selectedAnim = 0;
         skfCanvases[0].smoothFrames = 0;
-        skfCanvases[0].playing = true;
         skfCanvases[0].constructOptions.scale = { x: 0.125, y: 0.125 };
         skfCanvases[0].constructOptions.position = { x: 300, y: -250 };
 
         // configs for 2nd armature
         skfCanvases[1].activeStyles = [skfCanvases[1].armature.styles[2]];
-        skfCanvases[1].selectedAnim = 1;
+        skfCanvases[1].selectedAnim = 0;
         skfCanvases[1].smoothFrames = 0;
-        skfCanvases[1].playing = true;
         skfCanvases[1].constructOptions.scale = { x: 0.125, y: 0.125 };
         skfCanvases[1].constructOptions.position = { x: 300, y: -250 };
 
