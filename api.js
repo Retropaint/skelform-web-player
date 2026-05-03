@@ -48,7 +48,6 @@ async function SkfInit(skfData, canvas) {
   for (bone of skfCanvases[last].armature.bones) {
     bone.zindex = bone.zindex || 0;
   }
-  SkfInitNextKf(skfCanvases[last].armature.animations);
   canvas.addEventListener('webglcontextlost', function(event) {
     event.preventDefault();
   }, false);
