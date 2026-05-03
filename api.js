@@ -33,7 +33,7 @@ async function SkfDownloadSample(filename) {
   return new Uint8Array(arrayBuffer);
 }
 
-async function SkfInit(skfData, canvas) {
+async function SkfInit(skfData, canvas, startFrames) {
   skfCanvases.push(structuredClone(skfCanvasTemplate));
   const last = skfCanvases.length - 1;
   skfCanvases[last].gl = canvas.getContext("webgl");
@@ -48,6 +48,16 @@ async function SkfInit(skfData, canvas) {
   for (bone of skfCanvases[last].armature.bones) {
     bone.zindex = bone.zindex || 0;
   }
+
+  // run construct based on requested start frames.
+  // This is to setup a better static armature if it has physics elements, as the
+  if (startFrames) {
+    let skfc = skfCanvases[last]
+    for (let i = 0; i < startFrames; i++) {
+      skfc.armature.cachedBones = SkfGenericConstruct(skfc.armature.bones, skfc.armature.ik_root_ids, skfc.armature.cachedBones);
+    }
+  }
+
   canvas.addEventListener('webglcontextlost', function(event) {
     event.preventDefault();
   }, false);

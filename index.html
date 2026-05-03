@@ -10,12 +10,14 @@
         async function start() {
             // Download and initialize .skf file and its armature.
             // Note: both functions below are async
+            let rev_physics_frames = 30;
             let skellington = await SkfDownloadSample("skellington.skf");
-            await SkfInit(skellington, glcanvas);
+            await SkfInit(skellington, glcanvas, rev_physics_frames);
 
             // more armatures can continue being loaded
+            rev_physics_frames = 30;
             let skellina = await SkfDownloadSample("skellina.skf");
-            await SkfInit(skellina, glcanvas2);
+            await SkfInit(skellina, glcanvas2, rev_physics_frames);
 
             // Initialized armatures go into an 'skfCanvases' array.
             // All configurable settings are shown below, assuming the first canvas.
