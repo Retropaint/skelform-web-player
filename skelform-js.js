@@ -469,7 +469,6 @@ function simulate_physics(armature_bones, constructed_bones) {
 
       // apply difference in final angle and orbit
       arm_bone.phys_global_orbit_diff = diff_angle - arm_bone.phys_global_orbit
-      console.log(arm_bone.phys_global_orbit_diff)
     }
   }
 }
@@ -485,9 +484,12 @@ function SkfGenericConstruct(rawBones, ikRootIds, cachedBones) {
   resetInheritance(cachedBones, rawBones);
   inheritance(cachedBones, [])
 
-  ikRots = inverseKinematics(cachedBones, ikRootIds)
-  resetInheritance(cachedBones, rawBones);
-  inheritance(cachedBones, ikRots)
+  let ikRots = {}
+  if (ikRootIds) {
+    ikRots = inverseKinematics(cachedBones, ikRootIds)
+    resetInheritance(cachedBones, rawBones);
+    inheritance(cachedBones, ikRots)
+  }
 
   simulate_physics(rawBones, cachedBones)
   resetInheritance(cachedBones, rawBones);
