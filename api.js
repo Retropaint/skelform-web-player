@@ -54,7 +54,7 @@ async function SkfInit(skfData, canvas, startFrames) {
   if (startFrames) {
     let skfc = skfCanvases[last]
     for (let i = 0; i < startFrames; i++) {
-      skfc.armature.cachedBones = SkfGenericConstruct(skfc.armature.bones, skfc.armature.ik_root_ids, skfc.armature.cachedBones);
+      skfc.armature.cachedBones = SkfGenericConstruct(skfc.armature);
     }
   }
 
@@ -213,7 +213,7 @@ async function skfReadFile(fileBytes, gl) {
   return armature;
 }
 
-function SkfDraw(bones, styles, atlases, gl, program, buffers, uniforms) {
+function SkfDraw(bones, visuals, styles, atlases, gl, program, buffers, uniforms) {
   let verts = [];
   let indices = [];
   let lastAtlasIdx = 0;
@@ -230,7 +230,12 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers, uniforms) {
       continue;
     }
 
-    let tex = SkfGenericGetBoneTexture(bone.tex, styles);
+    let visual = visuals[bone.visuals_id];
+    if (!visual) {
+      continue;
+    }
+
+    let tex = SkfGenericGetBoneTexture(visual.tex, styles);
     if (!tex) {
       continue
     }
@@ -256,8 +261,8 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers, uniforms) {
 
     let thisIndices = new Uint16Array([0, 1, 2, 0, 2, 3]);
     let vertLen = 4;
-    if (bone.vertices) {
-      for (vert of bone.vertices) {
+    if (visual.vertices) {
+      for (vert of visual.vertices) {
         verts.push({});
         verts[verts.length - 1].uv = {
           x: vert.uv.x,
@@ -270,10 +275,10 @@ function SkfDraw(bones, styles, atlases, gl, program, buffers, uniforms) {
         const uvsize = { x: tright - tleft, y: tbot - ttop };
         verts[verts.length - 1].uv = { x: tleft + (uvsize.x * vert.uv.x), y: ttop + (uvsize.y * vert.uv.y) };
       }
-      thisIndices = new Uint16Array(bone.indices);
-      vertLen = bone.vertices.length;
+      thisIndices = new Uint16Array(visual.indices);
+      vertLen = visual.vertices.length;
     } else {
-      rectVerts = [{
+      const rectVerts = [{
         uv: { x: tleft, y: ttop },
         pos: { x: (-tsize.x / 2 * bone.scale.x), y: (-tsize.y / 2 * bone.scale.y) },
       },
@@ -573,7 +578,7 @@ function SkfNewFrame(time) {
 
     const smooth = (skfc.playing) ? skfc.smoothFrames : 0;
     SkfGenericAnimate(skfc.armature.bones, [anim], [frame], [smooth]);
-    skfc.armature.cachedBones = SkfGenericConstruct(skfc.armature.bones, skfc.armature.ik_root_ids, skfc.armature.cachedBones);
+    skfc.armature.cachedBones = SkfGenericConstruct(skfc.armature);
     let options = skfc.constructOptions;
     bones = skfc.armature.cachedBones;
     for (let b = 0; b < bones.length; b++) {
@@ -581,8 +586,9 @@ function SkfNewFrame(time) {
       bones[b].pos = mulv2(bones[b].pos, options.scale)
       bones[b].pos = addv2(bones[b].pos, options.position)
 
-      if (bones[b].vertices) {
-        for (vert of bones[b].vertices) {
+      let visual = skfc.armature.visuals[bones[b].visuals_id]
+      if (visual && visual.vertices) {
+        for (vert of visual.vertices) {
           vert.pos.y = -vert.pos.y;
           vert.pos = mulv2(vert.pos, options.scale);
           vert.pos = addv2(vert.pos, { x: options.position.x, y: -options.position.y });
@@ -590,7 +596,7 @@ function SkfNewFrame(time) {
       }
     }
     SkfClearScreen(skfc.elCanvas, skfc.lastCanvasSize, skfc.gl, skfc.program, skfc.uniforms);
-    SkfDraw(bones, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program, skfc.buffers, skfc.uniforms);
+    SkfDraw(bones, skfc.armature.visuals, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program, skfc.buffers, skfc.uniforms);
     if (skfc.elProgress) {
       anim = skfc.armature.animations[skfc.selectedAnim];
       const frame = SkfGenericTimeFrame(skfc.animTime, anim, false, true);
