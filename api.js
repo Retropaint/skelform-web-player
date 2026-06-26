@@ -218,7 +218,7 @@ function SkfDraw(bones, visuals, styles, atlases, gl, program, buffers, uniforms
   let indices = [];
   let lastAtlasIdx = 0;
   let hiddens = new Array(bones.length).fill(false);
-  bones.sort((a, b) => (a.zindex > b.zindex) ? 1 : -1);
+  bones.sort((a, b) => (a.zindex >= b.zindex) ? 1 : -1);
   for (let b = 0; b < bones.length; b++) {
     let bone = bones[b];
     let hidden = bone.hidden || false;
@@ -239,6 +239,12 @@ function SkfDraw(bones, visuals, styles, atlases, gl, program, buffers, uniforms
     if (!tex) {
       continue
     }
+
+    let dir = SkfIsFacingLeft(bone.scale) ? -1 : 1;
+
+    // setup pivot
+    let pivot_pos = mulv2(visual.pivot_pos, tex.size);
+    pivot_pos = mulv2(mulv2(SkfRotateVec2(pivot_pos, bone.rot * dir), bone.scale), visual.pivot_scale);
 
     // if this bone uses a different texture atlas, render everything before it and prepare
     // to render anything that uses this atlas
@@ -269,8 +275,8 @@ function SkfDraw(bones, visuals, styles, atlases, gl, program, buffers, uniforms
           y: vert.uv.y
         }
         verts[verts.length - 1].pos = {
-          x: vert.pos.x,
-          y: vert.pos.y
+          x: vert.pos.x + visual.pivot_pos.x,
+          y: vert.pos.y + visual.pivot_pos.y
         }
         const uvsize = { x: tright - tleft, y: tbot - ttop };
         verts[verts.length - 1].uv = { x: tleft + (uvsize.x * vert.uv.x), y: ttop + (uvsize.y * vert.uv.y) };
@@ -295,9 +301,10 @@ function SkfDraw(bones, visuals, styles, atlases, gl, program, buffers, uniforms
         pos: { x: (-tsize.x / 2 * bone.scale.x), y: (+tsize.y / 2 * bone.scale.y) },
       }];
 
-      const invPos = { x: bone.pos.x, y: -bone.pos.y };
+      //const invPos = { x: bone.pos.x + visual.pivot_pos.x, y: -bone.pos.y + visual.pivot_pos.y };
+      const invPos = { x: bone.pos.x + pivot_pos.x, y: -bone.pos.y - pivot_pos.y };
       for (let i = 0; i < 4; i++) {
-        rectVerts[i].pos = rotate(rectVerts[i].pos, -bone.rot);
+        rectVerts[i].pos = SkfRotateVec2(rectVerts[i].pos, -bone.rot - visual.pivot_rot);
         rectVerts[i].pos = addv2(rectVerts[i].pos, invPos);
       }
 
