@@ -19,6 +19,7 @@ let skfCanvasTemplate = {
   stylesOpen: [],
   rendered: false, // used to render at least one frame if an anim isn't playing
   lastAnimFrame: -1, // if anim frame is same as this, skip re-rendering
+  firefox: false,
 
   // WebGL stuff
   gl: {},
@@ -57,6 +58,9 @@ async function SkfInit(skfData, canvas, startFrames) {
       skfc.armature.cachedBones = SkfGenericConstruct(skfc.armature);
     }
   }
+
+  // https://stackoverflow.com/a/7000222
+  skfCanvases[last].firefox = navigator.userAgent.toLowerCase().includes('firefox')
 
   canvas.addEventListener('webglcontextlost', function(event) {
     event.preventDefault();
@@ -213,12 +217,16 @@ async function skfReadFile(fileBytes, gl) {
   return armature;
 }
 
-function SkfDraw(bones, visuals, styles, atlases, gl, program, buffers, uniforms) {
+function SkfDraw(bones, skfc) {
   let verts = [];
   let indices = [];
   let lastAtlasIdx = 0;
   let hiddens = new Array(bones.length).fill(false);
-  bones.sort((a, b) => (a.zindex >= b.zindex) ? 1 : -1);
+  if (skfc.firefox) {
+    bones.sort((a, b) => (a.zindex > b.zindex) ? 1 : -1);
+  } else {
+    bones.sort((a, b) => (a.zindex >= b.zindex) ? 1 : -1);
+  }
   for (let b = 0; b < bones.length; b++) {
     let bone = bones[b];
     let hidden = bone.hidden || false;
@@ -230,12 +238,12 @@ function SkfDraw(bones, visuals, styles, atlases, gl, program, buffers, uniforms
       continue;
     }
 
-    let visual = visuals[bone.visuals_id];
+    let visual = skfc.armature.visuals[bone.visuals_id];
     if (!visual) {
       continue;
     }
 
-    let tex = SkfGenericGetBoneTexture(visual.tex, styles);
+    let tex = SkfGenericGetBoneTexture(visual.tex, skfc.activeStyles);
     if (!tex) {
       continue
     }
@@ -250,14 +258,14 @@ function SkfDraw(bones, visuals, styles, atlases, gl, program, buffers, uniforms
     // to render anything that uses this atlas
     if (tex.atlas_idx != lastAtlasIdx) {
       if (verts.length > 0 && indices.length > 0) {
-        skfDrawMesh(verts, indices, atlases[tex.atlas_idx].texture, gl, program, buffers, uniforms);
+        skfDrawMesh(verts, indices, skfc.armature.atlases[tex.atlas_idx].texture, skfc.gl, skfc.program, skfc.buffers, skfc.uniforms);
         verts = [];
         indices = [];
       }
       lastAtlasIdx = tex.atlas_idx;
     }
 
-    const size = atlases[tex.atlas_idx].size;
+    const size = skfc.armature.atlases[tex.atlas_idx].size;
 
     const tleft = tex.offset.x / size.x;
     const tright = (tex.offset.x + tex.size.x) / size.x;
@@ -321,7 +329,7 @@ function SkfDraw(bones, visuals, styles, atlases, gl, program, buffers, uniforms
   }
 
   if (verts.length > 0 && indices.length > 0) {
-    skfDrawMesh(verts, indices, atlases[lastAtlasIdx].texture, gl, program, buffers, uniforms);
+    skfDrawMesh(verts, indices, skfc.armature.atlases[lastAtlasIdx].texture, skfc.gl, skfc.program, skfc.buffers, skfc.uniforms);
   }
 }
 
@@ -603,7 +611,7 @@ function SkfNewFrame(time) {
       }
     }
     SkfClearScreen(skfc.elCanvas, skfc.lastCanvasSize, skfc.gl, skfc.program, skfc.uniforms);
-    SkfDraw(bones, skfc.armature.visuals, skfc.activeStyles, skfc.armature.atlases, skfc.gl, skfc.program, skfc.buffers, skfc.uniforms);
+    SkfDraw(bones, skfc);
     if (skfc.elProgress) {
       anim = skfc.armature.animations[skfc.selectedAnim];
       const frame = SkfGenericTimeFrame(skfc.animTime, anim, false, true);
