@@ -46,7 +46,7 @@ async function SkfInit(skfData, canvas, startFrames) {
   skfCanvases[last].buffers = glprogram[2];
   skfCanvases[last].uniforms = glprogram[3];
   for (bone of skfCanvases[last].armature.bones) {
-    bone.zindex = bone.zindex || 0;
+    bone.zindex = bone.visuals_id < 0? 0 : skfCanvases[last].armature.visuals[bone.visuals_id].zindex; //Update for version 0.8.0
   }
 
   // run construct based on requested start frames.
@@ -147,6 +147,8 @@ function SkfInitGl(gl, program, clearColor, canvas) {
 // clear current frame of GL viewport, to make way for the next
 function SkfClearScreen(canvas, lastCanvasSize, gl, program, uniforms) {
   gl.clear(gl.COLOR_BUFFER_BIT);
+
+  gl.useProgram(program);
 
   // update GL resolution with canvas if it changed
   if (lastCanvasSize.x != canvas.width || lastCanvasSize.y != canvas.height) {
@@ -297,7 +299,7 @@ function SkfDraw(bones, visuals, styles, atlases, gl, program, buffers, uniforms
 
       const invPos = { x: bone.pos.x, y: -bone.pos.y };
       for (let i = 0; i < 4; i++) {
-        rectVerts[i].pos = rotate(rectVerts[i].pos, -bone.rot);
+        rectVerts[i].pos = SkfRotateVec2(rectVerts[i].pos, -bone.rot); //rotate to SkfRotateVec2 - update for version 0.8.0
         rectVerts[i].pos = addv2(rectVerts[i].pos, invPos);
       }
 
