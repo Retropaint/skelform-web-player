@@ -487,8 +487,6 @@ function SkfGenericConstruct(armature) {
     armature.cachedBones.sort((a, b) => (a.id > b.id) ? 1 : -1)
   }
 
-  console.log(armature.bones[0].name)
-
   // 1st inheritance pass 
   resetInheritance(armature.cachedBones, armature.bones);
   inheritance(armature.cachedBones, [], [])
@@ -511,7 +509,21 @@ function SkfGenericConstruct(armature) {
   // mesh deformation
   constructVerts(armature.cachedBones, armature.visuals)
 
+  // propagate hidden status to children
+  propagateHidden(armature.cachedBones)
+
   return armature.cachedBones;
+}
+
+function propagateHidden(bones) {
+  let hiddens = new Array(bones.length).fill(false);
+  bones.forEach((bone) => {
+    let isParentHidden = bone.parent_id != -1 && hiddens[bone.parent_id];
+    if (bone.hidden || isParentHidden) {
+      hiddens[bone.id] = true;
+      bone.hidden = true;
+    }
+  });
 }
 
 function constructVerts(bones, visuals) {

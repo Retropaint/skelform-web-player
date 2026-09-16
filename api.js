@@ -45,9 +45,6 @@ async function SkfInit(skfData, canvas, startFrames) {
   skfCanvases[last].program = glprogram[1];
   skfCanvases[last].buffers = glprogram[2];
   skfCanvases[last].uniforms = glprogram[3];
-  for (bone of skfCanvases[last].armature.bones) {
-    bone.zindex = bone.visuals_id < 0? 0 : skfCanvases[last].armature.visuals[bone.visuals_id].zindex; //Update for version 0.8.0
-  }
 
   // run construct based on requested start frames.
   // This is to setup a better static armature if it has physics elements, as the
@@ -219,16 +216,24 @@ function SkfDraw(bones, visuals, styles, atlases, gl, program, buffers, uniforms
   let verts = [];
   let indices = [];
   let lastAtlasIdx = 0;
-  let hiddens = new Array(bones.length).fill(false);
-  bones.sort((a, b) => (a.zindex > b.zindex) ? 1 : -1);
+
+  // sort bones by Z-index
+  bones.sort((a, b) => {
+    if (a.visuals_id == -1) {
+      return 1;
+    } else if (b.visuals_id == -1) {
+      return -1;
+    }
+
+    const visualsA = visuals[a.visuals_id];
+    const visualsB = visuals[b.visuals_id];
+    return (visualsA.zindex > visualsB.zindex) ? 1 : -1;
+  });
+
   for (let b = 0; b < bones.length; b++) {
     let bone = bones[b];
-    let hidden = bone.hidden || false;
-    if (bone.parent_id != -1 && hiddens[bone.parent_id]) {
-      hidden = true;
-    }
-    hiddens[b] = hidden;
-    if (hidden) {
+
+    if (bone.hidden) {
       continue;
     }
 
@@ -297,10 +302,12 @@ function SkfDraw(bones, visuals, styles, atlases, gl, program, buffers, uniforms
         pos: { x: (-tsize.x / 2 * bone.scale.x), y: (+tsize.y / 2 * bone.scale.y) },
       }];
 
-      const invPos = { x: bone.pos.x, y: -bone.pos.y };
       for (let i = 0; i < 4; i++) {
-        rectVerts[i].pos = SkfRotateVec2(rectVerts[i].pos, -bone.rot); //rotate to SkfRotateVec2 - update for version 0.8.0
-        rectVerts[i].pos = addv2(rectVerts[i].pos, invPos);
+        // rotate verts based on bone's rot
+        rectVerts[i].pos = SkfRotateVec2(rectVerts[i].pos, -bone.rot);
+
+        // finally, add bone's pos to vert (with inverted Y)
+        rectVerts[i].pos = addv2(rectVerts[i].pos, { x: bone.pos.x, y: -bone.pos.y });
       }
 
       verts.push(rectVerts[0]);
